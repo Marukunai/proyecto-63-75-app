@@ -1,5 +1,8 @@
 import React from 'react';
-import { LayoutDashboard, Calendar, Dumbbell, Utensils, Scale, CheckSquare, Moon, Activity, Code2, BookOpen, Compass } from 'lucide-react';
+import { 
+  LayoutDashboard, Calendar, Dumbbell, Utensils, Scale, 
+  CheckSquare, Moon, Activity, Code2, BookOpen, Compass, Settings 
+} from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -19,6 +22,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
     { id: 'progress', label: 'Progreso', icon: Activity },
     { id: 'weight', label: 'Peso', icon: Scale },
     { id: 'japan', label: 'Japón 🇯🇵', icon: Compass },
+    { id: 'settings', label: 'Ajustes', icon: Settings },
   ];
 
   return (
@@ -62,7 +66,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
         <header className="md:hidden flex items-center justify-between p-4 border-b border-slate-800 bg-[#0d1424]">
           <span className="font-bold text-cyan-400 text-sm">63 → 75+ App</span>
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-            Fase 3
+            Fase 4
           </span>
         </header>
         <div className="p-4 md:p-8 max-w-5xl mx-auto w-full">
@@ -72,14 +76,14 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
 
       {/* Bottom Navigation Móvil */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#0d1424]/95 backdrop-blur-md border-t border-slate-800 flex items-center justify-around px-1 z-50 overflow-x-auto">
-        {navItems.slice(0, 5).map((item) => {
+        {navItems.slice(0, 4).concat(navItems.slice(-1)).map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
           return (
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`flex flex-col items-center justify-center min-w-[50px] h-full gap-1 ${
+              className={`flex flex-col items-center justify-center min-w-[45px] h-full gap-1 ${
                 isActive ? 'text-cyan-400 font-semibold' : 'text-slate-400'
               }`}
             >

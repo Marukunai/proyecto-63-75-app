@@ -11,6 +11,7 @@ import { ProgressView } from './views/ProgressView';
 import { ProjectsView } from './views/ProjectsView';
 import { JournalView } from './views/JournalView';
 import { JapanModeView } from './views/JapanModeView';
+import { SettingsView } from './views/SettingsView';
 import { seedInitialData } from './db';
 
 export const App: React.FC = () => {
@@ -53,6 +54,8 @@ export const App: React.FC = () => {
         return <WeightView />;
       case 'japan':
         return <JapanModeView />;
+      case 'settings':
+        return <SettingsView />;
       default:
         return <DashboardView />;
     }
