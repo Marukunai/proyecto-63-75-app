@@ -5,6 +5,9 @@ import { HabitsView } from './views/HabitsView';
 import { WeightView } from './views/WeightView';
 import { WorkoutView } from './views/WorkoutView';
 import { CalendarView } from './views/CalendarView';
+import { NutritionView } from './views/NutritionView';
+import { SleepView } from './views/SleepView';
+import { ProgressView } from './views/ProgressView';
 import { seedInitialData } from './db';
 
 export const App: React.FC = () => {
@@ -31,10 +34,16 @@ export const App: React.FC = () => {
         return <DashboardView />;
       case 'habits':
         return <HabitsView />;
-      case 'weight':
-        return <WeightView />;
       case 'workout':
         return <WorkoutView />;
+      case 'nutrition':
+        return <NutritionView />;
+      case 'sleep':
+        return <SleepView />;
+      case 'progress':
+        return <ProgressView />;
+      case 'weight':
+        return <WeightView />;
       case 'calendar':
         return <CalendarView />;
       default:

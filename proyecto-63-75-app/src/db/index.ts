@@ -1,5 +1,8 @@
 import Dexie, { Table } from 'dexie';
-import { UserProfile, Habit, DailyLog, WeightLog, Exercise, WorkoutLog } from '../types';
+import { 
+  UserProfile, Habit, DailyLog, WeightLog, Exercise, WorkoutLog,
+  PersonalRecord, NutritionLog, SleepLog, BodyMeasurements
+} from '../types';
 
 export class AppDatabase extends Dexie {
   profile!: Table<UserProfile>;
@@ -8,23 +11,30 @@ export class AppDatabase extends Dexie {
   weightLogs!: Table<WeightLog>;
   exercises!: Table<Exercise>;
   workoutLogs!: Table<WorkoutLog>;
+  personalRecords!: Table<PersonalRecord>;
+  nutritionLogs!: Table<NutritionLog>;
+  sleepLogs!: Table<SleepLog>;
+  bodyMeasurements!: Table<BodyMeasurements>;
 
   constructor() {
     super('Proyecto6375DB');
-    this.version(1).stores({
+    this.version(2).stores({
       profile: '++id',
       habits: 'id, category',
       dailyLogs: 'date',
       weightLogs: '++id, date',
       exercises: 'id, category',
-      workoutLogs: '++id, date, exerciseId'
+      workoutLogs: '++id, date, exerciseId',
+      personalRecords: '++id, exerciseId, date',
+      nutritionLogs: '++id, date',
+      sleepLogs: '++id, date',
+      bodyMeasurements: '++id, date'
     });
   }
 }
 
 export const db = new AppDatabase();
 
-// Inicializar datos por defecto en primera ejecución
 export async function seedInitialData() {
   const profileCount = await db.profile.count();
   if (profileCount === 0) {
@@ -70,5 +80,14 @@ export async function seedInitialData() {
       weightKg: 63.2,
       notes: 'Pesaje inicial de inicio de transformación.'
     });
+  }
+
+  // PRs iniciales de referencia
+  const prCount = await db.personalRecords.count();
+  if (prCount === 0) {
+    await db.personalRecords.bulkAdd([
+      { exerciseId: 'ex_flexiones', recordValue: '20 repeticiones', date: new Date().toISOString().split('T')[0], notes: 'Marca inicial' },
+      { exerciseId: 'ex_sentadillas', recordValue: '20 repeticiones', date: new Date().toISOString().split('T')[0], notes: 'Marca inicial' },
+    ]);
   }
 }
