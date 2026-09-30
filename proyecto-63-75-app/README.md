@@ -4,12 +4,20 @@ Aplicación multiplataforma (PWA Responsive) diseñada como centro de control pe
 
 ---
 
+## 🌐 Estado del Proyecto & Despliegue
+
+- **URL de Producción (Netlify):** [https://proyecto-63-75-app.netlify.app/](https://proyecto-63-75-app.netlify.app/)
+- **Repositorio GitHub:** [https://github.com/Marukunai/proyecto-63-75-app](https://github.com/Marukunai/proyecto-63-75-app)
+- **Formato App:** Progressive Web App (PWA) instalable en Windows, Android e iOS.
+
+---
+
 ## 🎯 Principios y Filosofía del Proyecto
 
-1. **Constancia > Perfección:** Diseñado para evitar el abandono tras días difíciles.
-2. **Modo Mínimo ("Día Malo"):** Permite reducir exigencias a tareas básicas de mantenimiento sin penalizaciones ni pérdida de rachas.
-3. **Modo Japón (Hong Kong & Japón Oct 15–31, 2026):** Adaptación del tracker para viajes intensos enfocados en turismo, caminata y descanso activo.
-4. **Offline-First & Sincronización Multi-dispositivo:** Datos guardados localmente de forma inmediata con sincronización transparente en la nube para usar desde PC y Móvil.
+1. **Constancia > Perfección:** Diseñado para mantener el ritmo a largo plazo sin abandonar tras días difíciles.
+2. **Modo Mínimo ("Día Malo"):** Permite reducir exigencias a tareas básicas de mantenimiento en días de baja energía sin penalizaciones ni pérdida de acumulados.
+3. **Modo Japón (Hong Kong & Japón Oct 15–31, 2026):** Adaptación del registro para viajes intensos enfocados en turismo, caminata y descanso activo sin culpas.
+4. **Offline-First & Sincronización Cloud:** Datos guardados localmente de forma inmediata con Dexie.js (IndexedDB) y cliente opcional para sincronización con Supabase entre PC y Móvil.
 5. **Evolución Sostenible:** Progresión del peso de ~63.2 kg a ~75 kg sin fechas límites obsesivas ni métricas punitivas.
 
 ---
@@ -17,10 +25,10 @@ Aplicación multiplataforma (PWA Responsive) diseñada como centro de control pe
 ## 🛠️ Stack Tecnológico & Arquitectura
 
 - **Frontend:** React 18 + TypeScript + Vite
-- **Estilos:** Tailwind CSS + Lucide Icons (Dark Mode prioritario)
-- **Visualización de Datos:** Recharts (Tendencias de peso con media móvil, cumplimiento de hábitos)
-- **Persistencia & Sync:** Dexie.js (IndexedDB local) + Supabase / Firebase (Sincronización PC/Móvil)
-- **Formato App:** Progressive Web App (PWA - Instalable en Windows, Android, iOS)
+- **Estilos & UI:** Tailwind CSS + Lucide Icons (Dark Mode nativo)
+- **Persistencia Local:** Dexie.js (IndexedDB local offline-first)
+- **Sincronización Cloud & Backups:** Supabase Client + Exportador/Importador local a JSON
+- **Despliegue:** Netlify CI/CD con redirección SPA (`public/_redirects`)
 
 ---
 
@@ -28,71 +36,84 @@ Aplicación multiplataforma (PWA Responsive) diseñada como centro de control pe
 
 ```text
 /
-├── public/                 # Assets públicos y manifest PWA
+├── public/                  # Assets públicos, manifest.json PWA y _redirects
 ├── src/
-│   ├── assets/             # Imágenes e iconos estáticos
-│   ├── components/         # Componentes React
-│   │   ├── layout/         # Navbar, Sidebar, Layout base
-│   │   ├── dashboard/      # Tarjetas HOY, Barra de peso, Toggle Modo Mínimo
-│   │   ├── calendar/       # Vistas de calendario (Mes/Semana/Día)
-│   │   ├── workout/        # Selector de ejercicios, Series/Reps, PRs
-│   │   ├── nutrition/      # Comidas frecuentes, Calorías/Proteínas aproximadas
-│   │   ├── habits/         # Tracker de hábitos diario/semanal
-│   │   ├── projects/       # Kanban Poker Online, KaizoBankKunai, "Intento primero"
-│   │   ├── journal/        # Diario privado y Revisiones Semanales/Mensuales
-│   │   ├── japan/          # Vista especial viaje Hong Kong / Japón
-│   │   └── shared/         # Banners, Modales, Gráficos compartidos
-│   ├── context/            # Contextos globales de estado
-│   ├── db/                 # Esquemas e inicialización de IndexedDB
-│   ├── hooks/              # Custom Hooks (useWeight, useHabits, usePosture)
-│   ├── services/           # Sincronización de datos y exportación JSON/CSV
-│   ├── types/              # Interfaces TypeScript
-│   ├── utils/              # Cálculos de media móvil, XP, fechas
-│   └── views/              # Pantallas principales
+│   ├── assets/              # Recursos estáticos e imágenes
+│   ├── components/          # Componentes reutilizables
+│   │   └── layout/          # Navbar, Sidebar, Layout base responsive
+│   ├── db/                  # Esquema e inicialización de IndexedDB (Dexie)
+│   ├── services/            # Cliente Supabase y exportación/importación JSON
+│   ├── types/               # Interfaces TypeScript completas
+│   └── views/               # Pantallas principales de la aplicación
+│       ├── DashboardView.tsx # Centro de control "HOY", peso y Modo Mínimo
+│       ├── HabitsView.tsx    # Gestión y seguimiento de hábitos
+│       ├── ProjectsView.tsx  # Kanban de proyectos y tracker "Intento primero"
+│       ├── JournalView.tsx   # Diario personal y Revisiones Semanales
+│       ├── WorkoutView.tsx   # Rutinas de autocarga/mochila y registro de series
+│       ├── NutritionView.tsx # Comidas e ideas de densidad calórica
+│       ├── SleepView.tsx     # Calidad de sueño y hábito nocturno
+│       ├── ProgressView.tsx  # Medidas corporales (cm) e historial
+│       ├── WeightView.tsx    # Registro de pesaje diario
+│       ├── JapanModeView.tsx # Módulo de viaje Hong Kong / Japón
+│       └── SettingsView.tsx  # Conexión Supabase, Copia de seguridad JSON
 ├── package.json
 ├── vite.config.ts
+├── tailwind.config.js
+├── tsconfig.json
 └── README.md
 ```
 
+---
+
 ## 🗂️ Modelo de Datos Principal
 
-- **UserProfile:** Datos físicos iniciales, objetivo, bloque actual y prioridades musculares.
-- **DailyLog:** Registro diario con toggle de Modo Mínimo, Modo Japón, peso, horas de sueño y hábitos completados.
-- **Habit:** Definición de hábitos, categoría, frecuencia y recompensa en XP.
-- **Exercise & WorkoutSession:** Ejercicios corporales/mochila, registro de series, repeticiones, peso y récords personales (PRs).
-- **ProjectTask:** Gestión de tareas para proyectos de desarrollo con contador "Intento primero" para medir autonomía frente a IA.
+- **UserProfile:** Datos físicos iniciales, objetivo de peso (~75 kg), altura y fase del bloque actual.
+- **DailyLog:** Registro diario con toggle de Modo Mínimo, Modo Japón, peso y lista de hábitos completados.
+- **Habit:** Definición de hábitos, categoría (Cuerpo, Mente, Trabajo, Vida, Personal) y si aplica en Modo Mínimo.
+- **Exercise & WorkoutLog:** Ejercicios corporales/mochila, series, repeticiones y peso adicional.
+- **PersonalRecord:** Récords de fuerza personales (PRs).
+- **NutritionLog & SleepLog:** Registro flexible de comidas, proteína/calorías aprox., horas de descanso y calidad.
+- **BodyMeasurements:** Perímetros corporales (bíceps, pecho, cintura).
+- **ProjectTask:** Tareas para Poker Online y KaizoBankKunai con contador del hábito "Intento primero" para medir autonomía lógica.
+- **JournalEntry & WeeklyReview:** Diario privado y reflexiones de cada domingo.
+- **JapanDayLog:** Registro especial de caminatas, pasos y turismo para el viaje de octubre 2026.
 
 ---
 
-## 🗺️ Plan de Desarrollo por Fases
+## 🗺️ Estado del Plan de Desarrollo por Fases
 
-### 🔹 Fase 0 — Configuración Base e Infraestructura (ACTUAL)
-- [x] Repositorio vacío en GitHub (`proyecto-63-75-app`).
-- [x] Generación de arquitectura de archivos mediante script `.bat`.
-- [x] Documentación completa del proyecto (`README.md`).
+### 🔹 Fase 0 — Configuración Base e Infraestructura
+- [x] Repositorio en GitHub (proyecto-63-75-app).
+- [x] Generación de arquitectura de archivos y configuración TypeScript/Vite/Tailwind.
+- [x] Documentación completa inicial (README.md).
 
 ### 🔹 Fase 1 — MVP (Núcleo de Control Diario)
-- [ ] Configuración del esquema IndexedDB y tipos base TypeScript.
-- [ ] Layout responsive oscuro (Sidebar para PC / Bottom Navigation para móvil).
-- [ ] Dashboard "HOY": Visión diaria, peso actual, barra de progreso flexible y toggle de Modo Mínimo.
-- [ ] Calendario: Vista básica diaria y semanal.
-- [ ] Sistema de Hábitos: Módulo de cumplimiento diario sin castigos.
-- [ ] Entrenamiento Inicial: Rutinas de autocarga y mochila con registro de series/reps.
+- [x] Configuración del esquema IndexedDB (Dexie.js) y tipos base TypeScript.
+- [x] Layout responsive oscuro (Sidebar para PC / Bottom Navigation para móvil).
+- [x] Dashboard "HOY": Visión diaria, peso actual, barra de progreso flexible y toggle de Modo Mínimo.
+- [x] Calendario: Vista básica diaria y semanal.
+- [x] Sistema de Hábitos: Módulo de cumplimiento diario sin castigos.
+- [x] Entrenamiento Inicial: Rutinas de autocarga y mochila con registro de series/reps.
 
 ### 🔹 Fase 2 — Nutrición, Sueño y Evolución Física
-- [ ] Módulo de nutrición flexible y recetas de volumen muscular.
-- [ ] Registro de calidad de sueño, rutina nocturna y desintoxicación digital.
-- [ ] Módulo de progreso: Registro de medidas, comparador de fotos privadas y gráfico de media móvil de peso.
-- [ ] Módulo de Récords Personales (PRs) de fuerza.
+- [x] Módulo de nutrición flexible con ideas para aumentar ingesta calórica fácilmente.
+- [x] Registro de calidad de sueño, descanso y hábito de melatonina.
+- [x] Módulo de progreso: Registro de medidas corporales (cm) e historial.
+- [x] Módulo de Récords Personales (PRs) de fuerza.
 
 ### 🔹 Fase 3 — Proyectos, Crecimiento Personal y Modo Japón
-- [ ] Tablero de Proyectos (Poker Online, KaizoBankKunai) + Tracker del hábito "Intento primero".
-- [ ] Diario personal privado y formularios de Revisión Semanal (Domingos) y Mensual.
-- [ ] Gamificación adulta (Sistema de XP y Niveles por hábitos).
-- [ ] Modo Japón / Hong Kong (Oct 15–31, 2026): Pantalla especial con priorización de caminata y turismo.
-- [ ] Recordatorio de postura/movilidad para sesiones de programación en PC.
+- [x] Tablero de Proyectos (Poker Online, KaizoBankKunai) + Tracker del hábito "Intento primero".
+- [x] Diario personal privado y formularios de Revisión Semanal (Domingos).
+- [x] Modo Japón / Hong Kong (15–31 Oct 2026): Pantalla especial con priorización de caminata, pasos y turismo.
 
 ### 🔹 Fase 4 — Sincronización, Backup y Ajustes Avanzados
-- [ ] Sincronización multi-dispositivo (PC <-> Móvil) en la nube.
-- [ ] Exportación e Importación manual de datos en JSON y CSV.
-- [ ] Service Worker para soporte PWA completo e instalación nativa.
+- [x] Configuración del cliente Supabase para sincronización cloud multi-dispositivo.
+- [x] Exportación e Importación manual de datos en JSON para copias de seguridad locales.
+- [x] PWA manifest y configuración de despliegue en Netlify con regla de redirecciones _redirects.
+
+---
+
+## 📲 Instalación como PWA (Móvil y PC)
+
+- **En PC (Chrome/Edge):** Abre [https://proyecto-63-75-app.netlify.app/](https://proyecto-63-75-app.netlify.app/) y haz clic en el icono de **Instalar aplicación** en la barra de direcciones.
+- **En Móvil (Android/iOS):** Abre el enlace desde Chrome o Safari, pulsa en las opciones del navegador y selecciona **"Añadir a la pantalla de inicio"**.
