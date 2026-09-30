@@ -1,7 +1,8 @@
 import Dexie, { Table } from 'dexie';
 import { 
   UserProfile, Habit, DailyLog, WeightLog, Exercise, WorkoutLog,
-  PersonalRecord, NutritionLog, SleepLog, BodyMeasurements
+  PersonalRecord, NutritionLog, SleepLog, BodyMeasurements,
+  ProjectTask, JournalEntry, WeeklyReview, JapanDayLog
 } from '../types';
 
 export class AppDatabase extends Dexie {
@@ -15,10 +16,14 @@ export class AppDatabase extends Dexie {
   nutritionLogs!: Table<NutritionLog>;
   sleepLogs!: Table<SleepLog>;
   bodyMeasurements!: Table<BodyMeasurements>;
+  projectTasks!: Table<ProjectTask>;
+  journalEntries!: Table<JournalEntry>;
+  weeklyReviews!: Table<WeeklyReview>;
+  japanLogs!: Table<JapanDayLog>;
 
   constructor() {
     super('Proyecto6375DB');
-    this.version(2).stores({
+    this.version(3).stores({
       profile: '++id',
       habits: 'id, category',
       dailyLogs: 'date',
@@ -28,7 +33,11 @@ export class AppDatabase extends Dexie {
       personalRecords: '++id, exerciseId, date',
       nutritionLogs: '++id, date',
       sleepLogs: '++id, date',
-      bodyMeasurements: '++id, date'
+      bodyMeasurements: '++id, date',
+      projectTasks: '++id, projectId, status',
+      journalEntries: '++id, date',
+      weeklyReviews: '++id, weekStartDate',
+      japanLogs: '++id, date'
     });
   }
 }
@@ -60,34 +69,11 @@ export async function seedInitialData() {
     ]);
   }
 
-  const exerciseCount = await db.exercises.count();
-  if (exerciseCount === 0) {
-    await db.exercises.bulkAdd([
-      { id: 'ex_flexiones', name: 'Flexiones clásicas', category: 'Pecho', equipmentRequired: 'Ninguno' },
-      { id: 'ex_flex_inclinadas', name: 'Flexiones inclinadas en silla', category: 'Pecho', equipmentRequired: 'Silla resistente' },
-      { id: 'ex_sentadillas', name: 'Sentadillas corporales / mochila', category: 'Piernas', equipmentRequired: 'Mochila (opcional)' },
-      { id: 'ex_split_squat', name: 'Bulgarian Split Squat', category: 'Piernas', equipmentRequired: 'Silla resistente' },
-      { id: 'ex_remo_mochila', name: 'Remo con mochila', category: 'Espalda', equipmentRequired: 'Mochila con peso' },
-      { id: 'ex_curl_mochila', name: 'Curl de bíceps con mochila', category: 'Bíceps', equipmentRequired: 'Mochila con peso' },
-      { id: 'ex_plancha', name: 'Plancha abdominal', category: 'Core', equipmentRequired: 'Esterilla' }
-    ]);
-  }
-
-  const weightCount = await db.weightLogs.count();
-  if (weightCount === 0) {
-    await db.weightLogs.add({
-      date: new Date().toISOString().split('T')[0],
-      weightKg: 63.2,
-      notes: 'Pesaje inicial de inicio de transformación.'
-    });
-  }
-
-  // PRs iniciales de referencia
-  const prCount = await db.personalRecords.count();
-  if (prCount === 0) {
-    await db.personalRecords.bulkAdd([
-      { exerciseId: 'ex_flexiones', recordValue: '20 repeticiones', date: new Date().toISOString().split('T')[0], notes: 'Marca inicial' },
-      { exerciseId: 'ex_sentadillas', recordValue: '20 repeticiones', date: new Date().toISOString().split('T')[0], notes: 'Marca inicial' },
+  const taskCount = await db.projectTasks.count();
+  if (taskCount === 0) {
+    await db.projectTasks.bulkAdd([
+      { projectId: 'poker', title: 'Estructurar modelos de datos iniciales', status: 'in_progress', usedFirstAttemptWithoutAI: true },
+      { projectId: 'kaizo', title: 'Reunión de alineación de módulos con Aymane', status: 'backlog', usedFirstAttemptWithoutAI: false }
     ]);
   }
 }

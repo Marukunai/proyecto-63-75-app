@@ -8,6 +8,9 @@ import { CalendarView } from './views/CalendarView';
 import { NutritionView } from './views/NutritionView';
 import { SleepView } from './views/SleepView';
 import { ProgressView } from './views/ProgressView';
+import { ProjectsView } from './views/ProjectsView';
+import { JournalView } from './views/JournalView';
+import { JapanModeView } from './views/JapanModeView';
 import { seedInitialData } from './db';
 
 export const App: React.FC = () => {
@@ -34,6 +37,10 @@ export const App: React.FC = () => {
         return <DashboardView />;
       case 'habits':
         return <HabitsView />;
+      case 'projects':
+        return <ProjectsView />;
+      case 'journal':
+        return <JournalView />;
       case 'workout':
         return <WorkoutView />;
       case 'nutrition':
@@ -44,8 +51,8 @@ export const App: React.FC = () => {
         return <ProgressView />;
       case 'weight':
         return <WeightView />;
-      case 'calendar':
-        return <CalendarView />;
+      case 'japan':
+        return <JapanModeView />;
       default:
         return <DashboardView />;
     }

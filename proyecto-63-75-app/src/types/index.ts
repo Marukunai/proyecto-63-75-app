@@ -19,13 +19,13 @@ export interface Habit {
 export interface DailyLog {
   date: string; // YYYY-MM-DD
   isMinimumMode: boolean;
-  completedHabits: string[]; // Habit IDs
+  completedHabits: string[];
   notes?: string;
 }
 
 export interface WeightLog {
   id?: number;
-  date: string; // YYYY-MM-DD
+  date: string;
   weightKg: number;
   notes?: string;
 }
@@ -49,20 +49,18 @@ export interface WorkoutLog {
   sets: WorkoutSet[];
 }
 
-// --- FASE 2 EXTENSIONES ---
-
 export interface PersonalRecord {
   id?: number;
   exerciseId: string;
-  recordValue: string; // Ej: "25 reps", "22 kg mochila"
+  recordValue: string;
   date: string;
   notes?: string;
 }
 
 export interface NutritionLog {
   id?: number;
-  date: string; // YYYY-MM-DD
-  mealName: string; // Ej: "Desayuno", "Comida", "Merienda"
+  date: string;
+  mealName: string;
   description: string;
   approxProteinGrams?: number;
   approxCalories?: number;
@@ -70,11 +68,11 @@ export interface NutritionLog {
 
 export interface SleepLog {
   id?: number;
-  date: string; // YYYY-MM-DD
-  bedTime?: string; // "01:30"
-  wakeTime?: string; // "09:30"
+  date: string;
+  bedTime?: string;
+  wakeTime?: string;
   hoursSlept: number;
-  quality: 1 | 2 | 3 | 4 | 5; // 1 (malo) a 5 (excelente)
+  quality: 1 | 2 | 3 | 4 | 5;
   hadMelatonin?: boolean;
   hadCaffeineLate?: boolean;
   notes?: string;
@@ -82,11 +80,46 @@ export interface SleepLog {
 
 export interface BodyMeasurements {
   id?: number;
-  date: string; // YYYY-MM-DD
+  date: string;
   bicepsCm?: number;
   chestCm?: number;
-  shouldersCm?: number;
   waistCm?: number;
-  thighCm?: number;
-  calvesCm?: number;
+}
+
+// --- FASE 3 EXTENSIONES ---
+
+export interface ProjectTask {
+  id?: number;
+  projectId: 'poker' | 'kaizo' | string;
+  title: string;
+  status: 'backlog' | 'in_progress' | 'blocked' | 'completed';
+  timeSpentMinutes?: number;
+  usedFirstAttemptWithoutAI?: boolean; // Hábito "Intento primero"
+  notes?: string;
+}
+
+export interface JournalEntry {
+  id?: number;
+  date: string; // YYYY-MM-DD
+  content: string;
+  moodTags: string[]; // Ej: "Trabajo", "Familia", "Salud", "Ánimo Alto"
+}
+
+export interface WeeklyReview {
+  id?: number;
+  weekStartDate: string; // YYYY-MM-DD
+  whatWentWell: string;
+  whatWentWrong: string;
+  whatILearned: string;
+  nextWeekPriority: string;
+}
+
+export interface JapanDayLog {
+  id?: number;
+  date: string; // Oct 15 - Oct 31, 2026
+  location: string; // Ej: "Hong Kong", "Tokio", "Kioto", "Fuji"
+  stepsCount?: number;
+  isTourismDay: boolean;
+  isRestDay: boolean;
+  notes?: string;
 }

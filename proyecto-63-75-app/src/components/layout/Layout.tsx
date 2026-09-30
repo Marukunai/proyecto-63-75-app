@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Calendar, Dumbbell, Utensils, Scale, CheckSquare, Moon, Activity } from 'lucide-react';
+import { LayoutDashboard, Calendar, Dumbbell, Utensils, Scale, CheckSquare, Moon, Activity, Code2, BookOpen, Compass } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -11,12 +11,14 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
   const navItems = [
     { id: 'dashboard', label: 'Inicio', icon: LayoutDashboard },
     { id: 'habits', label: 'Hábitos', icon: CheckSquare },
+    { id: 'projects', label: 'Proyectos', icon: Code2 },
+    { id: 'journal', label: 'Diario', icon: BookOpen },
     { id: 'workout', label: 'Entrenar', icon: Dumbbell },
     { id: 'nutrition', label: 'Comidas', icon: Utensils },
     { id: 'sleep', label: 'Sueño', icon: Moon },
     { id: 'progress', label: 'Progreso', icon: Activity },
     { id: 'weight', label: 'Peso', icon: Scale },
-    { id: 'calendar', label: 'Calendario', icon: Calendar },
+    { id: 'japan', label: 'Japón 🇯🇵', icon: Compass },
   ];
 
   return (
@@ -41,7 +43,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                className={`flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-medium transition-all ${
                   isActive
                     ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 font-semibold'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
@@ -60,7 +62,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
         <header className="md:hidden flex items-center justify-between p-4 border-b border-slate-800 bg-[#0d1424]">
           <span className="font-bold text-cyan-400 text-sm">63 → 75+ App</span>
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-            Fase 2
+            Fase 3
           </span>
         </header>
         <div className="p-4 md:p-8 max-w-5xl mx-auto w-full">
