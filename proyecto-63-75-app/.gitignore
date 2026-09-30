@@ -1,1 +1,20 @@
 *_prompt.md
+# Dependencias
+node_modules
+.pnpm-store
+
+# Archivos de compilación / producción
+dist
+dist-ssr
+
+# Variables de entorno y logs
+*.local
+.env*.local
+*.log
+npm-debug.log*
+
+# Archivos del sistema y del editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

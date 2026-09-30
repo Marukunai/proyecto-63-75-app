@@ -1,0 +1,52 @@
+import React, { useState, useEffect } from 'react';
+import { Layout } from './components/layout/Layout';
+import { DashboardView } from './views/DashboardView';
+import { HabitsView } from './views/HabitsView';
+import { WeightView } from './views/WeightView';
+import { WorkoutView } from './views/WorkoutView';
+import { CalendarView } from './views/CalendarView';
+import { seedInitialData } from './db';
+
+export const App: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [isDbReady, setIsDbReady] = useState(false);
+
+  useEffect(() => {
+    seedInitialData().then(() => {
+      setIsDbReady(true);
+    });
+  }, []);
+
+  if (!isDbReady) {
+    return (
+      <div className="h-screen w-full bg-[#090d16] flex items-center justify-center text-slate-400 text-xs">
+        Cargando centro de control...
+      </div>
+    );
+  }
+
+  const renderView = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return <DashboardView />;
+      case 'habits':
+        return <HabitsView />;
+      case 'weight':
+        return <WeightView />;
+      case 'workout':
+        return <WorkoutView />;
+      case 'calendar':
+        return <CalendarView />;
+      default:
+        return <DashboardView />;
+    }
+  };
+
+  return (
+    <Layout activeTab={activeTab} setActiveTab={setActiveTab}>
+      {renderView()}
+    </Layout>
+  );
+};
+
+export default App;
