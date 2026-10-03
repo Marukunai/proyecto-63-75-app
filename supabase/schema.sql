@@ -16,14 +16,20 @@ create table if not exists public.user_sync_records (
   primary key (user_id, table_name, record_id)
 );
 
+-- Habilitar RLS
 alter table public.user_sync_records enable row level security;
-revoke all on public.user_sync_records from public, anon, authenticated;
-grant select, insert, update to authenticated;
 
+-- Revocar todos los privilegios por defecto
+revoke all on public.user_sync_records from public, anon, authenticated;
+
+-- SOLUCIÓN: Especificar la tabla y el rol correctamente
+grant select, insert, update on public.user_sync_records to authenticated;
+
+-- Configurar Políticas de Seguridad (RLS)
 drop policy if exists "Users manage their own sync records" on public.user_sync_records;
 create policy "Users manage their own sync records"
   on public.user_sync_records
   for all
   to authenticated
-  using ((select auth.uid()) is not null and (select auth.uid()) = user_id)
-  with check ((select auth.uid()) is not null and (select auth.uid()) = user_id);
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);

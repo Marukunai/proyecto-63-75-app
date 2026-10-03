@@ -1,9 +1,19 @@
-const CACHE_NAME = 'proyecto-63-75-v2';
+const CACHE_NAME = 'personal-journal-v5';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(['/', '/index.html', '/manifest.json']);
+      return cache.addAll([
+        '/',
+        '/index.html',
+        '/manifest.json',
+        '/favicon.ico',
+        '/apple-touch-icon.png',
+        '/icon.svg',
+        '/icon-192.png',
+        '/icon-512.png',
+        '/og-image.png',
+      ]);
     })
   );
   self.skipWaiting();
@@ -13,7 +23,9 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => Promise.all(
       cacheNames
-        .filter((cacheName) => cacheName.startsWith('proyecto-63-75-') && cacheName !== CACHE_NAME)
+        .filter((cacheName) => (
+          cacheName.startsWith('proyecto-63-75-') || cacheName.startsWith('personal-journal-')
+        ) && cacheName !== CACHE_NAME)
         .map((cacheName) => caches.delete(cacheName))
     ))
   );

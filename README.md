@@ -6,7 +6,7 @@ Aplicación multiplataforma (PWA responsive) para hábitos, bienestar y crecimie
 
 ## 🌐 Estado del Proyecto & Despliegue
 
-- **URL de Producción (Netlify):** [https://proyecto-63-75-app.netlify.app/](https://proyecto-63-75-app.netlify.app/)
+- **URL de Producción (Netlify):** [https://marukunai-personal-journal.netlify.app/](https://marukunai-personal-journal.netlify.app/)
 - **Repositorio GitHub:** [https://github.com/Marukunai/proyecto-63-75-app](https://github.com/Marukunai/proyecto-63-75-app)
 - **Formato App:** Progressive Web App (PWA) instalable en Windows, Android e iOS.
 
@@ -114,7 +114,7 @@ Aplicación multiplataforma (PWA responsive) para hábitos, bienestar y crecimie
 
 ## 📲 Instalación como PWA (Móvil y PC)
 
-- **En PC (Chrome/Edge):** Abre [https://proyecto-63-75-app.netlify.app/](https://proyecto-63-75-app.netlify.app/) y haz clic en el icono de **Instalar aplicación** en la barra de direcciones.
+- **En PC (Chrome/Edge):** Abre [https://marukunai-personal-journal.netlify.app/](https://marukunai-personal-journal.netlify.app/) y haz clic en el icono de **Instalar aplicación** en la barra de direcciones.
 - **En Móvil (Android/iOS):** Abre el enlace desde Chrome o Safari, pulsa en las opciones del navegador y selecciona **"Añadir a la pantalla de inicio"**.
 
 ## 🔐 Configurar la sincronización con Supabase

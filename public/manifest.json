@@ -1,15 +1,21 @@
 {
-  "short_name": "63→75+",
-  "name": "Proyecto 63→75+ App",
-  "icons": [
-    {
-      "src": "favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
-    }
-  ],
-  "start_url": ".",
+  "id": "/",
+  "name": "Marukunai Personal Journal",
+  "short_name": "Marukunai",
+  "description": "Tu diario personal para reflexionar, cuidar tus hábitos y crecer a tu ritmo.",
+  "lang": "es-ES",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "theme_color": "#090d16",
-  "background_color": "#090d16"
+  "background_color": "#090d16",
+  "categories": ["lifestyle", "productivity", "health"],
+  "icons": [
+    { "src": "/icon.svg",     "sizes": "any",     "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png",     "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png",     "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png",     "purpose": "maskable" }
+  ]
 }
