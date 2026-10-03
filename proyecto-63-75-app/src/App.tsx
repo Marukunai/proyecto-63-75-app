@@ -38,6 +38,8 @@ export const App: React.FC = () => {
         return <DashboardView />;
       case 'habits':
         return <HabitsView />;
+      case 'calendar':
+        return <CalendarView />;    
       case 'projects':
         return <ProjectsView />;
       case 'journal':
