@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
-import { BookOpen, Plus, Calendar } from 'lucide-react';
+import { Plus, Calendar, Check, Trash2 } from 'lucide-react';
+import { JournalEntry, WeeklyReview } from '../types';
+import { RowActions, EditingBanner, confirmDelete, scrollIntoViewSmooth } from '../components/shared/EditControls';
 import { getLocalDateString } from '../utils/dates';
 
 const getWeekStartDate = (date: Date) => {
@@ -34,9 +36,80 @@ export const JournalView: React.FC = () => {
   const [learned, setLearned] = useState('');
   const [priority, setPriority] = useState('');
 
+  // Edición
+  const formRef = useRef<HTMLFormElement>(null);
+  const [editingEntryId, setEditingEntryId] = useState<number | null>(null);
+  const [editingEntryDate, setEditingEntryDate] = useState('');
+  const [editingReviewId, setEditingReviewId] = useState<number | null>(null);
+  const [editingReviewDate, setEditingReviewDate] = useState('');
+
+  const resetDaily = () => {
+    setEditingEntryId(null);
+    setContent('');
+  };
+
+  const resetWeekly = () => {
+    setEditingReviewId(null);
+    setWentWell('');
+    setWentWrong('');
+    setLearned('');
+    setPriority('');
+  };
+
+  const switchTab = (next: 'daily' | 'weekly') => {
+    resetDaily();
+    resetWeekly();
+    setTab(next);
+  };
+
+  const startEditingEntry = (entry: JournalEntry) => {
+    resetWeekly();
+    setEditingEntryId(entry.id ?? null);
+    setEditingEntryDate(entry.date);
+    setContent(entry.content);
+    setSelectedTag(entry.moodTags[0] || 'Salud');
+    scrollIntoViewSmooth(formRef.current);
+  };
+
+  const deleteEntry = async (entry: JournalEntry, what = 'esta entrada del diario') => {
+    if (!entry.id || !confirmDelete(what)) return;
+    await db.journalEntries.delete(entry.id);
+    if (editingEntryId === entry.id) resetDaily();
+  };
+
+  const startEditingReview = (review: WeeklyReview) => {
+    resetDaily();
+    setEditingReviewId(review.id ?? null);
+    setEditingReviewDate(review.weekStartDate);
+    setWentWell(review.whatWentWell);
+    setWentWrong(review.whatWentWrong);
+    setLearned(review.whatILearned);
+    setPriority(review.nextWeekPriority);
+    scrollIntoViewSmooth(formRef.current);
+  };
+
+  const deleteReview = async (review: WeeklyReview) => {
+    if (!review.id || !confirmDelete('esta revisión semanal')) return;
+    await db.weeklyReviews.delete(review.id);
+    if (editingReviewId === review.id) resetWeekly();
+  };
+
   const addDailyEntry = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) return;
+
+    if (editingEntryId) {
+      if (!editingEntryDate) return;
+      const original = journalEntries?.find((entry) => entry.id === editingEntryId);
+      const otherTags = (original?.moodTags ?? []).slice(1);
+      await db.journalEntries.update(editingEntryId, {
+        date: editingEntryDate,
+        content: content.trim(),
+        moodTags: [selectedTag, ...otherTags],
+      });
+      resetDaily();
+      return;
+    }
 
     await db.journalEntries.add({
       date: getLocalDateString(),
@@ -51,13 +124,25 @@ export const JournalView: React.FC = () => {
     e.preventDefault();
     if (!wentWell.trim() || !priority.trim()) return;
 
-    await db.weeklyReviews.add({
-      weekStartDate: getWeekStartDate(new Date()),
+    const values = {
       whatWentWell: wentWell.trim(),
       whatWentWrong: wentWrong.trim(),
       whatILearned: learned.trim(),
       nextWeekPriority: priority.trim(),
-    });
+    };
+
+    if (editingReviewId) {
+      if (!editingReviewDate) return;
+      // La revisión se agrupa por semana: cualquier día elegido se normaliza a su lunes.
+      await db.weeklyReviews.update(editingReviewId, {
+        ...values,
+        weekStartDate: getWeekStartDate(new Date(`${editingReviewDate}T12:00:00`)),
+      });
+      resetWeekly();
+      return;
+    }
+
+    await db.weeklyReviews.add({ weekStartDate: getWeekStartDate(new Date()), ...values });
 
     setWentWell('');
     setWentWrong('');
@@ -74,7 +159,7 @@ export const JournalView: React.FC = () => {
 
       <div className="flex gap-2 p-1 bg-slate-900 border border-slate-800 rounded-xl w-fit">
         <button
-          onClick={() => setTab('daily')}
+          onClick={() => switchTab('daily')}
           className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
             tab === 'daily'
               ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
@@ -84,7 +169,7 @@ export const JournalView: React.FC = () => {
           📖 Reflejo Diario
         </button>
         <button
-          onClick={() => setTab('weekly')}
+          onClick={() => switchTab('weekly')}
           className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
             tab === 'weekly'
               ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
@@ -96,7 +181,8 @@ export const JournalView: React.FC = () => {
       </div>
 
       {tab === 'daily' ? (
-        <form onSubmit={addDailyEntry} className="p-4 bg-[#0d1424] border border-slate-800 rounded-2xl space-y-3">
+        <form ref={formRef} onSubmit={addDailyEntry} className="scroll-mt-4 p-4 bg-[#0d1424] border border-slate-800 rounded-2xl space-y-3">
+          {editingEntryId && <EditingBanner date={editingEntryDate} onDateChange={setEditingEntryDate} onCancel={resetDaily} />}
           <textarea
             rows={4}
             placeholder="¿Cómo te sientes hoy? ¿Qué te preocupa o qué has conseguido?..."
@@ -121,12 +207,13 @@ export const JournalView: React.FC = () => {
               type="submit"
               className="flex items-center gap-2 bg-cyan-500 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs hover:bg-cyan-400 transition-colors w-full sm:w-auto justify-center"
             >
-              <Plus size={16} /> Guardar Entrada
+              {editingEntryId ? <><Check size={16} /> Guardar cambios</> : <><Plus size={16} /> Guardar Entrada</>}
             </button>
           </div>
         </form>
       ) : (
-        <form onSubmit={addWeeklyReview} className="p-4 bg-[#0d1424] border border-slate-800 rounded-2xl space-y-3">
+        <form ref={formRef} onSubmit={addWeeklyReview} className="scroll-mt-4 p-4 bg-[#0d1424] border border-slate-800 rounded-2xl space-y-3">
+          {editingReviewId && <EditingBanner date={editingReviewDate} onDateChange={setEditingReviewDate} onCancel={resetWeekly} />}
           <input
             type="text"
             placeholder="1. ¿Qué hice bien esta semana?"
@@ -160,7 +247,7 @@ export const JournalView: React.FC = () => {
             type="submit"
             className="w-full flex items-center justify-center gap-2 bg-emerald-500 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs hover:bg-emerald-400 transition-colors"
           >
-            <Plus size={16} /> Guardar Revisión Semanal
+            {editingReviewId ? <><Check size={16} /> Guardar cambios</> : <><Plus size={16} /> Guardar Revisión Semanal</>}
           </button>
         </form>
       )}
@@ -174,12 +261,15 @@ export const JournalView: React.FC = () => {
         {tab === 'daily' ? (
           journalEntries?.filter((entry) => !entry.moodTags.includes('Revisión Semanal')).length ? journalEntries
             .filter((entry) => !entry.moodTags.includes('Revisión Semanal')).map((entry) => (
-            <div key={entry.id} className="p-4 bg-[#0d1424] border border-slate-800 rounded-xl space-y-2">
-              <div className="flex justify-between items-center">
+            <div key={entry.id} className={`p-4 bg-[#0d1424] border rounded-xl space-y-2 ${editingEntryId === entry.id ? 'border-amber-500/50' : 'border-slate-800'}`}>
+              <div className="flex justify-between items-center gap-2">
                 <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-cyan-400 border border-slate-700 font-medium">
                   {entry.moodTags[0] || 'Diario'}
                 </span>
-                <span className="text-[11px] text-slate-500">{formatDate(entry.date)}</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-[11px] text-slate-500">{formatDate(entry.date)}</span>
+                  <RowActions label="entrada" onEdit={() => startEditingEntry(entry)} onDelete={() => void deleteEntry(entry)} />
+                </div>
               </div>
               <p className="text-xs text-slate-300 whitespace-pre-line leading-relaxed">{entry.content}</p>
             </div>
@@ -192,12 +282,15 @@ export const JournalView: React.FC = () => {
           weeklyReviews?.length || legacyWeeklyEntries.length ? (
             <>
               {weeklyReviews?.map((review) => (
-                <div key={`review-${review.id}`} className="p-4 bg-[#0d1424] border border-slate-800 rounded-xl space-y-3">
-                  <div className="flex items-center gap-2 text-cyan-400">
-                    <Calendar size={14} />
-                    <span className="text-[11px] font-semibold">
-                      Semana del {formatDate(review.weekStartDate)}
-                    </span>
+                <div key={`review-${review.id}`} className={`p-4 bg-[#0d1424] border rounded-xl space-y-3 ${editingReviewId === review.id ? 'border-amber-500/50' : 'border-slate-800'}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 text-cyan-400">
+                      <Calendar size={14} />
+                      <span className="text-[11px] font-semibold">
+                        Semana del {formatDate(review.weekStartDate)}
+                      </span>
+                    </div>
+                    <RowActions label="revisión semanal" onEdit={() => startEditingReview(review)} onDelete={() => void deleteReview(review)} />
                   </div>
                   <div className="space-y-2 text-xs text-slate-300">
                     <p><span className="text-slate-500">Qué fue bien:</span> {review.whatWentWell}</p>
@@ -209,9 +302,14 @@ export const JournalView: React.FC = () => {
               ))}
               {legacyWeeklyEntries.map((entry) => (
                 <div key={`legacy-${entry.id}`} className="p-4 bg-[#0d1424] border border-slate-800 rounded-xl space-y-2">
-                  <div className="flex items-center gap-2 text-slate-400">
-                    <Calendar size={14} />
-                    <span className="text-[11px] font-semibold">Revisión anterior · {formatDate(entry.date)}</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 text-slate-400">
+                      <Calendar size={14} />
+                      <span className="text-[11px] font-semibold">Revisión anterior · {formatDate(entry.date)}</span>
+                    </div>
+                    <button type="button" onClick={() => void deleteEntry(entry, 'esta revisión anterior')} aria-label="Eliminar revisión anterior" className="rounded-lg p-2 text-slate-400 hover:text-red-400">
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                   <p className="text-xs text-slate-300 whitespace-pre-line leading-relaxed">{entry.content}</p>
                 </div>

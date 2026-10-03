@@ -1,18 +1,50 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import { getLocalDateString } from '../utils/dates';
-import { Scale, Plus, TrendingUp } from 'lucide-react';
+import { Plus, Check } from 'lucide-react';
+import { WeightLog } from '../types';
+import { RowActions, EditingBanner, confirmDelete, scrollIntoViewSmooth } from '../components/shared/EditControls';
 
 export const WeightView: React.FC = () => {
   const weightLogs = useLiveQuery(() => db.weightLogs.orderBy('date').reverse().toArray());
   const [weight, setWeight] = useState('');
   const [notes, setNotes] = useState('');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingDate, setEditingDate] = useState('');
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const resetForm = () => {
+    setEditingId(null);
+    setWeight('');
+    setNotes('');
+  };
+
+  const startEditing = (log: WeightLog) => {
+    setEditingId(log.id ?? null);
+    setEditingDate(log.date);
+    setWeight(String(log.weightKg));
+    setNotes(log.notes ?? '');
+    scrollIntoViewSmooth(formRef.current);
+  };
+
+  const deleteWeight = async (log: WeightLog) => {
+    if (!log.id || !confirmDelete('este pesaje')) return;
+    await db.weightLogs.delete(log.id);
+    if (editingId === log.id) resetForm();
+  };
 
   const addWeight = async (e: React.FormEvent) => {
     e.preventDefault();
     const val = parseFloat(weight);
     if (!val || val <= 0) return;
+
+    if (editingId) {
+      if (!editingDate) return;
+      await db.weightLogs.update(editingId, { date: editingDate, weightKg: val, notes: notes.trim() || undefined });
+      resetForm();
+      return;
+    }
 
     await db.weightLogs.add({
       date: getLocalDateString(),
@@ -31,7 +63,8 @@ export const WeightView: React.FC = () => {
         <p className="text-xs text-slate-400">Pésate en ayunas por la mañana sin obsesionarte por las fluctuaciones diarias.</p>
       </div>
 
-      <form onSubmit={addWeight} className="p-4 bg-[#0d1424] border border-slate-800 rounded-2xl space-y-3">
+      <form ref={formRef} onSubmit={addWeight} className="scroll-mt-4 p-4 bg-[#0d1424] border border-slate-800 rounded-2xl space-y-3">
+        {editingId && <EditingBanner date={editingDate} onDateChange={setEditingDate} onCancel={resetForm} />}
         <div className="flex gap-3">
           <input
             type="number"
@@ -43,9 +76,9 @@ export const WeightView: React.FC = () => {
           />
           <button
             type="submit"
-            className="flex items-center gap-2 bg-emerald-500 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs hover:bg-emerald-400 transition-colors"
+            className="flex shrink-0 items-center gap-2 bg-emerald-500 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs hover:bg-emerald-400 transition-colors"
           >
-            <Plus size={16} /> Registrar
+            {editingId ? <><Check size={16} /> Guardar</> : <><Plus size={16} /> Registrar</>}
           </button>
         </div>
         <input
@@ -60,12 +93,15 @@ export const WeightView: React.FC = () => {
       <div className="space-y-2">
         <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Histórico de Pesajes</h3>
         {weightLogs?.map((log) => (
-          <div key={log.id} className="flex items-center justify-between p-3.5 bg-[#0d1424] border border-slate-800 rounded-xl">
-            <div>
+          <div key={log.id} className={`flex items-center justify-between gap-3 p-3.5 bg-[#0d1424] border rounded-xl ${editingId === log.id ? 'border-amber-500/50' : 'border-slate-800'}`}>
+            <div className="min-w-0">
               <span className="text-xs font-bold text-slate-200">{log.weightKg} kg</span>
               {log.notes && <p className="text-[11px] text-slate-400 mt-0.5">{log.notes}</p>}
             </div>
-            <span className="text-[11px] text-slate-500">{log.date}</span>
+            <div className="flex shrink-0 items-center gap-1">
+              <span className="text-[11px] text-slate-500">{log.date}</span>
+              <RowActions label="pesaje" onEdit={() => startEditing(log)} onDelete={() => void deleteWeight(log)} />
+            </div>
           </div>
         ))}
       </div>

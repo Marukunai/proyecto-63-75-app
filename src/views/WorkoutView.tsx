@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
-import { Exercise } from '../types';
+import { Exercise, PersonalRecord, WorkoutLog } from '../types';
 import { getLocalDateString } from '../utils/dates';
-import { Dumbbell, Plus, Trash2, Pencil, Trophy } from 'lucide-react';
+import { Plus, Trash2, Pencil, Trophy, Check } from 'lucide-react';
+import { RowActions, EditingBanner, confirmDelete, scrollIntoViewSmooth } from '../components/shared/EditControls';
 
 export const WorkoutView: React.FC = () => {
   const exercises = useLiveQuery(() => db.exercises.toArray());
@@ -20,6 +21,54 @@ export const WorkoutView: React.FC = () => {
   const [recordExerciseId, setRecordExerciseId] = useState('');
   const [recordValue, setRecordValue] = useState('');
   const [recordNotes, setRecordNotes] = useState('');
+  const [editingLogId, setEditingLogId] = useState<number | null>(null);
+  const [editingLogDate, setEditingLogDate] = useState('');
+  const [editingRecordId, setEditingRecordId] = useState<number | null>(null);
+  const [editingRecordDate, setEditingRecordDate] = useState('');
+  const setFormRef = useRef<HTMLFormElement>(null);
+  const recordFormRef = useRef<HTMLFormElement>(null);
+
+  const cancelLogEdit = () => {
+    setEditingLogId(null);
+    setReps('');
+    setWeightKg('');
+  };
+
+  const startEditingLog = (log: WorkoutLog) => {
+    setEditingLogId(log.id ?? null);
+    setEditingLogDate(log.date);
+    setSelectedEx(log.exerciseId);
+    setReps(String(log.sets[0]?.reps ?? ''));
+    setWeightKg(log.sets[0]?.weightKg !== undefined ? String(log.sets[0].weightKg) : '');
+    scrollIntoViewSmooth(setFormRef.current);
+  };
+
+  const deleteLog = async (log: WorkoutLog) => {
+    if (!log.id || !confirmDelete('esta serie')) return;
+    await db.workoutLogs.delete(log.id);
+    if (editingLogId === log.id) cancelLogEdit();
+  };
+
+  const cancelRecordEdit = () => {
+    setEditingRecordId(null);
+    setRecordValue('');
+    setRecordNotes('');
+  };
+
+  const startEditingRecord = (record: PersonalRecord) => {
+    setEditingRecordId(record.id ?? null);
+    setEditingRecordDate(record.date);
+    setRecordExerciseId(record.exerciseId);
+    setRecordValue(record.recordValue);
+    setRecordNotes(record.notes ?? '');
+    scrollIntoViewSmooth(recordFormRef.current);
+  };
+
+  const deleteRecord = async (record: PersonalRecord) => {
+    if (!record.id || !confirmDelete('este récord')) return;
+    await db.personalRecords.delete(record.id);
+    if (editingRecordId === record.id) cancelRecordEdit();
+  };
 
   const addSet = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,13 +77,15 @@ export const WorkoutView: React.FC = () => {
     if (!selectedEx || !Number.isInteger(repetitions) || repetitions <= 0) return;
     if (additionalWeight !== undefined && (!Number.isFinite(additionalWeight) || additionalWeight < 0)) return;
 
-    const todayStr = getLocalDateString();
-    
-    await db.workoutLogs.add({
-      date: todayStr,
-      exerciseId: selectedEx,
-      sets: [{ reps: repetitions, weightKg: additionalWeight }]
-    });
+    const sets = [{ reps: repetitions, weightKg: additionalWeight }];
+    if (editingLogId) {
+      if (!editingLogDate) return;
+      await db.workoutLogs.update(editingLogId, { date: editingLogDate, exerciseId: selectedEx, sets });
+      cancelLogEdit();
+      return;
+    }
+
+    await db.workoutLogs.add({ date: getLocalDateString(), exerciseId: selectedEx, sets });
 
     setReps('');
     setWeightKg('');
@@ -84,6 +135,17 @@ export const WorkoutView: React.FC = () => {
   const addPersonalRecord = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!recordExerciseId || !recordValue.trim()) return;
+    if (editingRecordId) {
+      if (!editingRecordDate) return;
+      await db.personalRecords.update(editingRecordId, {
+        exerciseId: recordExerciseId,
+        recordValue: recordValue.trim(),
+        date: editingRecordDate,
+        notes: recordNotes.trim() || undefined,
+      });
+      cancelRecordEdit();
+      return;
+    }
     await db.personalRecords.add({
       exerciseId: recordExerciseId,
       recordValue: recordValue.trim(),
@@ -105,7 +167,8 @@ export const WorkoutView: React.FC = () => {
         <p className="text-xs text-slate-400">Registra series, gestiona ejercicios y guarda tus récords personales.</p>
       </div>
 
-      <form onSubmit={addSet} className="p-4 bg-[#0d1424] border border-slate-800 rounded-2xl space-y-3">
+      <form ref={setFormRef} onSubmit={addSet} className="scroll-mt-4 p-4 bg-[#0d1424] border border-slate-800 rounded-2xl space-y-3">
+        {editingLogId && <EditingBanner date={editingLogDate} onDateChange={setEditingLogDate} onCancel={cancelLogEdit} />}
         <select
           value={selectedEx}
           onChange={(e) => setSelectedEx(e.target.value)}
@@ -140,7 +203,7 @@ export const WorkoutView: React.FC = () => {
             type="submit"
             className="col-span-2 flex shrink-0 items-center justify-center gap-2 bg-cyan-500 text-slate-950 font-semibold px-4 py-2.5 rounded-xl text-xs hover:bg-cyan-400 transition-colors"
           >
-            <Plus size={16} /> Serie
+            {editingLogId ? <><Check size={16} /> Guardar cambios</> : <><Plus size={16} /> Serie</>}
           </button>
         </div>
       </form>
@@ -159,17 +222,21 @@ export const WorkoutView: React.FC = () => {
 
       <div className="space-y-2">
         <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Registro de Series Recientes</h3>
+        {workoutLogs?.length === 0 && <p className="text-xs text-slate-500 italic">Todavía no has registrado ninguna serie.</p>}
         {workoutLogs?.map((log) => {
           const ex = exercises?.find((e) => e.id === log.exerciseId);
           return (
-            <div key={log.id} className="flex items-center justify-between p-3.5 bg-[#0d1424] border border-slate-800 rounded-xl">
-              <div>
+            <div key={log.id} className={`flex items-center justify-between gap-3 p-3.5 bg-[#0d1424] border rounded-xl ${editingLogId === log.id ? 'border-amber-500/50' : 'border-slate-800'}`}>
+              <div className="min-w-0">
                 <span className="text-xs font-bold text-slate-200 block">{ex?.name || 'Ejercicio'}</span>
                 <span className="text-[11px] text-cyan-400">
                   {log.sets[0]?.reps} reps {log.sets[0]?.weightKg ? `(${log.sets[0].weightKg} kg mochila)` : ''}
                 </span>
               </div>
-              <span className="text-[11px] text-slate-500">{log.date}</span>
+              <div className="flex shrink-0 items-center gap-1">
+                <span className="text-[11px] text-slate-500">{log.date}</span>
+                <RowActions label="serie" onEdit={() => startEditingLog(log)} onDelete={() => void deleteLog(log)} />
+              </div>
             </div>
           );
         })}
@@ -222,23 +289,27 @@ export const WorkoutView: React.FC = () => {
 
       <section className="p-4 bg-[#0d1424] border border-slate-800 rounded-2xl space-y-3">
         <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2"><Trophy size={16} className="text-amber-400" /> Récord personal</h3>
-        <form onSubmit={addPersonalRecord} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {editingRecordId && <EditingBanner date={editingRecordDate} onDateChange={setEditingRecordDate} onCancel={cancelRecordEdit} />}
+        <form ref={recordFormRef} onSubmit={addPersonalRecord} className="scroll-mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
           <select required value={recordExerciseId} onChange={(e) => setRecordExerciseId(e.target.value)} className="bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-100">
             <option value="">Selecciona ejercicio…</option>
             {exercises?.map((exercise) => <option key={exercise.id} value={exercise.id}>{exercise.name}</option>)}
           </select>
           <input required value={recordValue} onChange={(e) => setRecordValue(e.target.value)} placeholder="Récord (p. ej. 20 reps o 8 kg)" className="bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-100" />
-          <button type="submit" className="rounded-xl bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950">Guardar récord</button>
+          <button type="submit" className="rounded-xl bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950">{editingRecordId ? 'Guardar cambios' : 'Guardar récord'}</button>
           <input value={recordNotes} onChange={(e) => setRecordNotes(e.target.value)} placeholder="Nota opcional" className="sm:col-span-3 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-100" />
         </form>
         <div className="space-y-2">
           {personalRecords?.map((record) => (
-            <div key={record.id} className="flex items-start justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/50 p-3">
-              <div>
+            <div key={record.id} className={`flex items-start justify-between gap-3 rounded-xl border bg-slate-900/50 p-3 ${editingRecordId === record.id ? 'border-amber-500/50' : 'border-slate-800'}`}>
+              <div className="min-w-0">
                 <p className="text-xs text-slate-200">{exercises?.find((exercise) => exercise.id === record.exerciseId)?.name ?? 'Ejercicio eliminado'}: <strong className="text-amber-300">{record.recordValue}</strong></p>
                 {record.notes && <p className="mt-1 text-[10px] text-slate-500">{record.notes}</p>}
               </div>
-              <time className="shrink-0 text-[10px] text-slate-500">{record.date}</time>
+              <div className="flex shrink-0 items-center gap-1">
+                <time className="text-[10px] text-slate-500">{record.date}</time>
+                <RowActions label="récord" onEdit={() => startEditingRecord(record)} onDelete={() => void deleteRecord(record)} />
+              </div>
             </div>
           ))}
         </div>

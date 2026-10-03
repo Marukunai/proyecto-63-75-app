@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import { getLocalDateString } from '../utils/dates';
-import { Ruler, Plus, TrendingUp } from 'lucide-react';
+import { Plus, Check } from 'lucide-react';
+import { BodyMeasurements } from '../types';
+import { RowActions, EditingBanner, confirmDelete, scrollIntoViewSmooth } from '../components/shared/EditControls';
 
 export const ProgressView: React.FC = () => {
   const bodyLogs = useLiveQuery(() => db.bodyMeasurements.orderBy('date').reverse().toArray());
@@ -10,16 +12,50 @@ export const ProgressView: React.FC = () => {
   const [biceps, setBiceps] = useState('');
   const [chest, setChest] = useState('');
   const [waist, setWaist] = useState('');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingDate, setEditingDate] = useState('');
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const resetForm = () => {
+    setEditingId(null);
+    setBiceps('');
+    setChest('');
+    setWaist('');
+  };
+
+  const startEditing = (log: BodyMeasurements) => {
+    setEditingId(log.id ?? null);
+    setEditingDate(log.date);
+    setBiceps(log.bicepsCm !== undefined ? String(log.bicepsCm) : '');
+    setChest(log.chestCm !== undefined ? String(log.chestCm) : '');
+    setWaist(log.waistCm !== undefined ? String(log.waistCm) : '');
+    scrollIntoViewSmooth(formRef.current);
+  };
+
+  const deleteMeasurements = async (log: BodyMeasurements) => {
+    if (!log.id || !confirmDelete('estas medidas')) return;
+    await db.bodyMeasurements.delete(log.id);
+    if (editingId === log.id) resetForm();
+  };
 
   const addMeasurements = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!biceps && !chest && !waist) return;
 
-    await db.bodyMeasurements.add({
-      date: getLocalDateString(),
+    const values = {
       bicepsCm: biceps ? parseFloat(biceps) : undefined,
       chestCm: chest ? parseFloat(chest) : undefined,
       waistCm: waist ? parseFloat(waist) : undefined,
-    });
+    };
+
+    if (editingId) {
+      if (!editingDate) return;
+      await db.bodyMeasurements.update(editingId, { ...values, date: editingDate });
+      resetForm();
+      return;
+    }
+
+    await db.bodyMeasurements.add({ date: getLocalDateString(), ...values });
 
     setBiceps('');
     setChest('');
@@ -33,7 +69,8 @@ export const ProgressView: React.FC = () => {
         <p className="text-xs text-slate-400">Registra perímetros corporales cada 2-4 semanas para observar cambios en masa muscular.</p>
       </div>
 
-      <form onSubmit={addMeasurements} className="p-4 bg-[#0d1424] border border-slate-800 rounded-2xl space-y-3">
+      <form ref={formRef} onSubmit={addMeasurements} className="scroll-mt-4 p-4 bg-[#0d1424] border border-slate-800 rounded-2xl space-y-3">
+        {editingId && <EditingBanner date={editingDate} onDateChange={setEditingDate} onCancel={resetForm} />}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <input
             type="number"
@@ -65,7 +102,7 @@ export const ProgressView: React.FC = () => {
           type="submit"
           className="w-full flex items-center justify-center gap-2 bg-emerald-500 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs hover:bg-emerald-400 transition-colors"
         >
-          <Plus size={16} /> Guardar Medidas
+          {editingId ? <><Check size={16} /> Guardar cambios</> : <><Plus size={16} /> Guardar Medidas</>}
         </button>
       </form>
 
@@ -73,14 +110,15 @@ export const ProgressView: React.FC = () => {
       <div className="space-y-2">
         <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Histórico de Medidas</h3>
         {bodyLogs?.map((log) => (
-          <div key={log.id} className="p-3.5 bg-[#0d1424] border border-slate-800 rounded-xl space-y-2">
+          <div key={log.id} className={`p-3.5 bg-[#0d1424] border rounded-xl space-y-2 ${editingId === log.id ? 'border-amber-500/50' : 'border-slate-800'}`}>
             <div className="flex justify-between items-center">
               <span className="text-[11px] font-bold text-cyan-400">{log.date}</span>
+              <RowActions label="medidas" onEdit={() => startEditing(log)} onDelete={() => void deleteMeasurements(log)} />
             </div>
             <div className="grid grid-cols-3 gap-2 text-xs text-slate-300">
-              {log.bicepsCm && <div>Bíceps: <strong>{log.bicepsCm} cm</strong></div>}
-              {log.chestCm && <div>Pecho: <strong>{log.chestCm} cm</strong></div>}
-              {log.waistCm && <div>Cintura: <strong>{log.waistCm} cm</strong></div>}
+              {!!log.bicepsCm && <div>Bíceps: <strong>{log.bicepsCm} cm</strong></div>}
+              {!!log.chestCm && <div>Pecho: <strong>{log.chestCm} cm</strong></div>}
+              {!!log.waistCm && <div>Cintura: <strong>{log.waistCm} cm</strong></div>}
             </div>
           </div>
         ))}

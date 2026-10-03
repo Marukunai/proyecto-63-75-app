@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import { getLocalDateString } from '../utils/dates';
-import { Moon, Star, Plus } from 'lucide-react';
+import { Star, Plus, Check } from 'lucide-react';
+import { SleepLog } from '../types';
+import { RowActions, EditingBanner, confirmDelete, scrollIntoViewSmooth } from '../components/shared/EditControls';
 
 export const SleepView: React.FC = () => {
   const sleepLogs = useLiveQuery(() => db.sleepLogs.orderBy('date').reverse().toArray());
@@ -11,19 +13,54 @@ export const SleepView: React.FC = () => {
   const [quality, setQuality] = useState<number>(4);
   const [hadMelatonin, setHadMelatonin] = useState(false);
   const [notes, setNotes] = useState('');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingDate, setEditingDate] = useState('');
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const resetForm = () => {
+    setEditingId(null);
+    setHours('');
+    setQuality(4);
+    setHadMelatonin(false);
+    setNotes('');
+  };
+
+  const startEditing = (log: SleepLog) => {
+    setEditingId(log.id ?? null);
+    setEditingDate(log.date);
+    setHours(String(log.hoursSlept));
+    setQuality(log.quality);
+    setHadMelatonin(!!log.hadMelatonin);
+    setNotes(log.notes ?? '');
+    scrollIntoViewSmooth(formRef.current);
+  };
+
+  const deleteSleep = async (log: SleepLog) => {
+    if (!log.id || !confirmDelete('este registro de sueño')) return;
+    await db.sleepLogs.delete(log.id);
+    if (editingId === log.id) resetForm();
+  };
 
   const addSleep = async (e: React.FormEvent) => {
     e.preventDefault();
     const h = parseFloat(hours);
     if (!h || h <= 0) return;
 
-    await db.sleepLogs.add({
-      date: getLocalDateString(),
+    const values = {
       hoursSlept: h,
-      quality: quality as any,
+      quality: quality as SleepLog['quality'],
       hadMelatonin,
       notes: notes.trim() || undefined,
-    });
+    };
+
+    if (editingId) {
+      if (!editingDate) return;
+      await db.sleepLogs.update(editingId, { ...values, date: editingDate });
+      resetForm();
+      return;
+    }
+
+    await db.sleepLogs.add({ date: getLocalDateString(), ...values });
 
     setHours('');
     setNotes('');
@@ -36,7 +73,8 @@ export const SleepView: React.FC = () => {
         <p className="text-xs text-slate-400">Registra tus horas de descanso y observa tendencias para afianzar tu rutina nocturna.</p>
       </div>
 
-      <form onSubmit={addSleep} className="p-4 bg-[#0d1424] border border-slate-800 rounded-2xl space-y-4">
+      <form ref={formRef} onSubmit={addSleep} className="scroll-mt-4 p-4 bg-[#0d1424] border border-slate-800 rounded-2xl space-y-4">
+        {editingId && <EditingBanner date={editingDate} onDateChange={setEditingDate} onCancel={resetForm} />}
         <div className="flex flex-col sm:flex-row gap-3">
           <input
             type="number"
@@ -87,9 +125,9 @@ export const SleepView: React.FC = () => {
           />
           <button
             type="submit"
-            className="flex items-center gap-2 bg-indigo-500 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs hover:bg-indigo-400 transition-colors"
+            className="flex shrink-0 items-center gap-2 bg-indigo-500 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs hover:bg-indigo-400 transition-colors"
           >
-            <Plus size={16} /> Registrar
+            {editingId ? <><Check size={16} /> Guardar</> : <><Plus size={16} /> Registrar</>}
           </button>
         </div>
       </form>
@@ -98,8 +136,8 @@ export const SleepView: React.FC = () => {
       <div className="space-y-2">
         <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Histórico de Descanso</h3>
         {sleepLogs?.map((log) => (
-          <div key={log.id} className="flex items-center justify-between p-3.5 bg-[#0d1424] border border-slate-800 rounded-xl">
-            <div>
+          <div key={log.id} className={`flex items-center justify-between gap-3 p-3.5 bg-[#0d1424] border rounded-xl ${editingId === log.id ? 'border-amber-500/50' : 'border-slate-800'}`}>
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-slate-200">{log.hoursSlept} horas</span>
                 <span className="text-[10px] text-amber-400 flex items-center gap-0.5">
@@ -113,7 +151,10 @@ export const SleepView: React.FC = () => {
               </div>
               {log.notes && <p className="text-[11px] text-slate-400 mt-1">{log.notes}</p>}
             </div>
-            <span className="text-[11px] text-slate-500">{log.date}</span>
+            <div className="flex shrink-0 items-center gap-1">
+              <span className="text-[11px] text-slate-500">{log.date}</span>
+              <RowActions label="registro de sueño" onEdit={() => startEditing(log)} onDelete={() => void deleteSleep(log)} />
+            </div>
           </div>
         ))}
       </div>
