@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
+import { getLocalDateString } from '../utils/dates';
 import { Ruler, Plus, TrendingUp } from 'lucide-react';
 
 export const ProgressView: React.FC = () => {
@@ -14,7 +15,7 @@ export const ProgressView: React.FC = () => {
     e.preventDefault();
 
     await db.bodyMeasurements.add({
-      date: new Date().toISOString().split('T')[0],
+      date: getLocalDateString(),
       bicepsCm: biceps ? parseFloat(biceps) : undefined,
       chestCm: chest ? parseFloat(chest) : undefined,
       waistCm: waist ? parseFloat(waist) : undefined,

@@ -8,9 +8,10 @@ interface LayoutProps {
   children: React.ReactNode;
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  enabledModules: string[];
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, enabledModules }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navItems = [
@@ -23,12 +24,13 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
     { id: 'sleep', label: 'Sueño', icon: Moon, category: 'Mente' },
     { id: 'projects', label: 'Proyectos', icon: Code2, category: 'Vida' },
     { id: 'journal', label: 'Diario', icon: BookOpen, category: 'Mente' },
-    { id: 'japan', label: 'Japón 🇯🇵', icon: Compass, category: 'Especial' },
+    { id: 'travel', label: 'Viajes', icon: Compass, category: 'Personal' },
     { id: 'calendar', label: 'Calendario', icon: Calendar, category: 'Principal' },
     { id: 'settings', label: 'Ajustes', icon: Settings, category: 'Sistema' },
   ];
 
-  const primaryMobileItems = navItems.slice(0, 4); // Inicio, Hábitos, Entrenar, Comidas
+  const visibleNavItems = navItems.filter((item) => item.id === 'dashboard' || item.id === 'settings' || enabledModules.includes(item.id));
+  const primaryMobileItems = visibleNavItems.filter((item) => item.id !== 'settings').slice(0, 4);
 
   const handleSelectTab = (tabId: string) => {
     setActiveTab(tabId);
@@ -41,16 +43,16 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
       <aside className="hidden md:flex flex-col w-64 border-r border-slate-800 bg-[#0d1424] p-4">
         <div className="flex items-center gap-3 px-2 py-4 border-b border-slate-800/80 mb-4">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400 font-bold text-lg border border-cyan-500/20">
-            63
+            ✦
           </div>
           <div>
-            <h1 className="font-bold text-slate-100 text-base leading-tight">Proyecto 63→75+</h1>
-            <p className="text-xs text-slate-400">Transformación 2026-2027</p>
+            <h1 className="font-bold text-slate-100 text-base leading-tight">Mi espacio</h1>
+            <p className="text-xs text-slate-400">Bienestar a tu manera</p>
           </div>
         </div>
 
         <nav className="flex flex-col gap-1 flex-1 overflow-y-auto pr-1">
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             return (
@@ -74,7 +76,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
       {/* Contenido Principal */}
       <main className="flex-1 flex flex-col h-full overflow-y-auto pb-24 md:pb-6">
         <header className="md:hidden flex items-center justify-between p-4 border-b border-slate-800 bg-[#0d1424]">
-          <span className="font-bold text-cyan-400 text-sm">63 → 75+ App</span>
+          <span className="font-bold text-cyan-400 text-sm">Mi espacio</span>
           <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
             PWA Móvil
           </span>
@@ -99,7 +101,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
             </div>
 
             <div className="grid grid-cols-3 gap-2.5 pt-2">
-              {navItems.map((item) => {
+              {visibleNavItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
                 return (

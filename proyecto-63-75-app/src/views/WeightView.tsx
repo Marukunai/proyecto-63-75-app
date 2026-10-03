@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
+import { getLocalDateString } from '../utils/dates';
 import { Scale, Plus, TrendingUp } from 'lucide-react';
 
 export const WeightView: React.FC = () => {
@@ -14,7 +15,7 @@ export const WeightView: React.FC = () => {
     if (!val || val <= 0) return;
 
     await db.weightLogs.add({
-      date: new Date().toISOString().split('T')[0],
+      date: getLocalDateString(),
       weightKg: val,
       notes: notes.trim() || undefined,
     });

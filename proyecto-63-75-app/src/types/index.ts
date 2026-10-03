@@ -1,10 +1,19 @@
 export interface UserProfile {
   id?: number;
   name: string;
-  initialWeight: number; // 63.2
-  targetWeight: number;  // 75.0
-  height: number;        // 187 cm
-  currentPhase: string;  // "Bloque 1 - Recuperación"
+  initialWeight?: number;
+  targetWeight?: number;
+  height?: number;
+  currentPhase?: string;
+}
+
+export interface AppSettings {
+  id: 'app';
+  theme: 'dark' | 'warm' | 'light';
+  enabledModules: string[];
+  showWeightWidget: boolean;
+  travelName: string;
+  projects: string[];
 }
 
 export interface Habit {
@@ -33,7 +42,7 @@ export interface WeightLog {
 export interface Exercise {
   id: string;
   name: string;
-  category: 'Pecho' | 'Espalda' | 'Hombros' | 'Bíceps' | 'Tríceps' | 'Piernas' | 'Core' | 'Movilidad';
+  category: 'Pecho' | 'Espalda' | 'Hombros' | 'Bíceps' | 'Tríceps' | 'Piernas' | 'Glúteos' | 'Core' | 'Movilidad' | 'Postura';
   equipmentRequired: string;
 }
 
@@ -116,10 +125,21 @@ export interface WeeklyReview {
 
 export interface JapanDayLog {
   id?: number;
-  date: string; // Oct 15 - Oct 31, 2026
+  date: string;
+  tripName?: string;
   location: string; // Ej: "Hong Kong", "Tokio", "Kioto", "Fuji"
   stepsCount?: number;
   isTourismDay: boolean;
   isRestDay: boolean;
   notes?: string;
+}
+
+export interface SyncMetadata {
+  key: string;
+  tableName: string;
+  localKey: string | number;
+  recordId: string;
+  updatedAt: number;
+  data?: Record<string, unknown>;
+  deleted?: boolean;
 }

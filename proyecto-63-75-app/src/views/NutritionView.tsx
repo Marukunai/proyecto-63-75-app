@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
+import { getLocalDateString } from '../utils/dates';
 import { Utensils, Plus, Flame, Lightbulb } from 'lucide-react';
 
 export const NutritionView: React.FC = () => {
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getLocalDateString();
   const todayMeals = useLiveQuery(() => db.nutritionLogs.where('date').equals(todayStr).toArray());
 
   const [mealName, setMealName] = useState('Comida');

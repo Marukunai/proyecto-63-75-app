@@ -2,11 +2,27 @@ import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import { BookOpen, Plus, Calendar } from 'lucide-react';
+import { getLocalDateString } from '../utils/dates';
+
+const getWeekStartDate = (date: Date) => {
+  const monday = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const daysSinceMonday = (monday.getDay() + 6) % 7;
+  monday.setDate(monday.getDate() - daysSinceMonday);
+  return getLocalDateString(monday);
+};
+
+const formatDate = (dateString: string) =>
+  new Date(`${dateString}T12:00:00`).toLocaleDateString('es-ES', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
 
 export const JournalView: React.FC = () => {
   const [tab, setTab] = useState<'daily' | 'weekly'>('daily');
   const journalEntries = useLiveQuery(() => db.journalEntries.orderBy('date').reverse().toArray());
   const weeklyReviews = useLiveQuery(() => db.weeklyReviews.orderBy('weekStartDate').reverse().toArray());
+  const legacyWeeklyEntries = journalEntries?.filter((entry) => entry.moodTags.includes('Revisión Semanal')) ?? [];
 
   // Estado diario
   const [content, setContent] = useState('');
@@ -23,7 +39,7 @@ export const JournalView: React.FC = () => {
     if (!content.trim()) return;
 
     await db.journalEntries.add({
-      date: new Date().toISOString().split('T')[0],
+      date: getLocalDateString(),
       content: content.trim(),
       moodTags: [selectedTag],
     });
@@ -35,10 +51,12 @@ export const JournalView: React.FC = () => {
     e.preventDefault();
     if (!wentWell.trim() || !priority.trim()) return;
 
-    await db.journalEntries.add({
-      date: new Date().toISOString().split('T')[0],
-      content: `REVISIÓN SEMANAL:\n- Qué fue bien: ${wentWell}\n- Qué salió mal: ${wentWrong}\n- Aprendizaje: ${learned}\n- Prioridad próxima semana: ${priority}`,
-      moodTags: ['Revisión Semanal'],
+    await db.weeklyReviews.add({
+      weekStartDate: getWeekStartDate(new Date()),
+      whatWentWell: wentWell.trim(),
+      whatWentWrong: wentWrong.trim(),
+      whatILearned: learned.trim(),
+      nextWeekPriority: priority.trim(),
     });
 
     setWentWell('');
@@ -149,18 +167,62 @@ export const JournalView: React.FC = () => {
 
       {/* Entradas Guardadas */}
       <div className="space-y-2">
-        <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Entradas Anteriores</h3>
-        {journalEntries?.map((entry) => (
-          <div key={entry.id} className="p-4 bg-[#0d1424] border border-slate-800 rounded-xl space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-cyan-400 border border-slate-700 font-medium">
-                {entry.moodTags[0]}
-              </span>
-              <span className="text-[11px] text-slate-500">{entry.date}</span>
+        <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+          {tab === 'daily' ? 'Entradas anteriores' : 'Revisiones anteriores'}
+        </h3>
+
+        {tab === 'daily' ? (
+          journalEntries?.filter((entry) => !entry.moodTags.includes('Revisión Semanal')).length ? journalEntries
+            .filter((entry) => !entry.moodTags.includes('Revisión Semanal')).map((entry) => (
+            <div key={entry.id} className="p-4 bg-[#0d1424] border border-slate-800 rounded-xl space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-cyan-400 border border-slate-700 font-medium">
+                  {entry.moodTags[0] || 'Diario'}
+                </span>
+                <span className="text-[11px] text-slate-500">{formatDate(entry.date)}</span>
+              </div>
+              <p className="text-xs text-slate-300 whitespace-pre-line leading-relaxed">{entry.content}</p>
             </div>
-            <p className="text-xs text-slate-300 whitespace-pre-line leading-relaxed">{entry.content}</p>
-          </div>
-        ))}
+          )) : (
+            <p className="p-4 bg-[#0d1424] border border-slate-800 rounded-xl text-xs text-slate-500">
+              Todavía no hay entradas diarias.
+            </p>
+          )
+        ) : (
+          weeklyReviews?.length || legacyWeeklyEntries.length ? (
+            <>
+              {weeklyReviews?.map((review) => (
+                <div key={`review-${review.id}`} className="p-4 bg-[#0d1424] border border-slate-800 rounded-xl space-y-3">
+                  <div className="flex items-center gap-2 text-cyan-400">
+                    <Calendar size={14} />
+                    <span className="text-[11px] font-semibold">
+                      Semana del {formatDate(review.weekStartDate)}
+                    </span>
+                  </div>
+                  <div className="space-y-2 text-xs text-slate-300">
+                    <p><span className="text-slate-500">Qué fue bien:</span> {review.whatWentWell}</p>
+                    <p><span className="text-slate-500">Qué se puede mejorar:</span> {review.whatWentWrong || '—'}</p>
+                    <p><span className="text-slate-500">Qué aprendí:</span> {review.whatILearned || '—'}</p>
+                    <p><span className="text-slate-500">Prioridad de la próxima semana:</span> {review.nextWeekPriority}</p>
+                  </div>
+                </div>
+              ))}
+              {legacyWeeklyEntries.map((entry) => (
+                <div key={`legacy-${entry.id}`} className="p-4 bg-[#0d1424] border border-slate-800 rounded-xl space-y-2">
+                  <div className="flex items-center gap-2 text-slate-400">
+                    <Calendar size={14} />
+                    <span className="text-[11px] font-semibold">Revisión anterior · {formatDate(entry.date)}</span>
+                  </div>
+                  <p className="text-xs text-slate-300 whitespace-pre-line leading-relaxed">{entry.content}</p>
+                </div>
+              ))}
+            </>
+          ) : (
+            <p className="p-4 bg-[#0d1424] border border-slate-800 rounded-xl text-xs text-slate-500">
+              Todavía no hay revisiones semanales guardadas.
+            </p>
+          )
+        )}
       </div>
     </div>
   );

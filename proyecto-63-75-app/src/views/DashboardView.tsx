@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
+import { getLocalDateString } from '../utils/dates';
 import { HeartPulse, CheckCircle2, Circle, Flame, ArrowUpRight, ShieldAlert } from 'lucide-react';
 
-export const DashboardView: React.FC = () => {
+interface DashboardViewProps {
+  showWeightWidget?: boolean;
+}
+
+export const DashboardView: React.FC<DashboardViewProps> = ({ showWeightWidget = false }) => {
   const profile = useLiveQuery(() => db.profile.toCollection().first());
   const habits = useLiveQuery(() => db.habits.toArray());
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getLocalDateString();
 
   const todayLog = useLiveQuery(() => db.dailyLogs.get(todayStr));
   const latestWeight = useLiveQuery(() => db.weightLogs.orderBy('date').reverse().first());
@@ -43,15 +48,13 @@ export const DashboardView: React.FC = () => {
     });
   };
 
-  const currentW = latestWeight?.weightKg || 63.2;
-  const initialW = profile?.initialWeight || 63.2;
-  const targetW = profile?.targetWeight || 75.0;
-  
-  // Cálculo de progreso porcentual hacia 75 kg
-  const progressPercent = Math.min(
-    100,
-    Math.max(0, ((currentW - initialW) / (targetW - initialW)) * 100)
-  );
+  const currentW = latestWeight?.weightKg ?? profile?.initialWeight;
+  const initialW = profile?.initialWeight;
+  const targetW = profile?.targetWeight;
+  const canShowProgress = currentW !== undefined && initialW !== undefined && targetW !== undefined && targetW > initialW;
+  const progressPercent = canShowProgress
+    ? Math.min(100, Math.max(0, ((currentW - initialW) / (targetW - initialW)) * 100))
+    : 0;
 
   const activeHabits = habits?.filter(h => !isMinMode || h.isMinimumModeAllowed) || [];
 
@@ -60,8 +63,8 @@ export const DashboardView: React.FC = () => {
       {/* Banner de Bienvenida y Selector Modo Mínimo */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900 to-slate-800/80 border border-slate-800">
         <div>
-          <h2 className="text-xl font-bold text-slate-100">Hola. Centro de Control para Hoy 👋</h2>
-          <p className="text-xs text-slate-400 mt-1">{profile?.currentPhase || 'Bloque 1 - Recuperación'}</p>
+          <h2 className="text-xl font-bold text-slate-100">Hola{profile?.name ? `, ${profile.name}` : ''} 👋</h2>
+          <p className="text-xs text-slate-400 mt-1">{profile?.currentPhase || 'Tu espacio para cuidar de ti, a tu ritmo.'}</p>
         </div>
 
         <button
@@ -83,21 +86,21 @@ export const DashboardView: React.FC = () => {
         </div>
       )}
 
-      {/* Tarjeta Visual de Peso y Meta Flexible */}
-      <div className="p-5 rounded-2xl bg-[#0d1424] border border-slate-800 space-y-4">
+      {/* Tarjeta opcional de peso: no muestra datos personales hasta activarla */}
+      {showWeightWidget && <div className="p-5 rounded-2xl bg-[#0d1424] border border-slate-800 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-slate-300 text-sm font-semibold">
             <Flame size={18} className="text-cyan-400" />
             <span>Evolución de Peso Corporal</span>
           </div>
-          <span className="text-xs text-slate-400">Objetivo: ~{targetW} kg</span>
+          <span className="text-xs text-slate-400">{targetW ? `Objetivo: ${targetW} kg` : 'Objetivo sin configurar'}</span>
         </div>
 
         <div className="flex items-baseline gap-3">
-          <span className="text-3xl font-extrabold text-slate-100">{currentW} kg</span>
-          <span className="text-xs text-emerald-400 font-medium flex items-center">
-            +{ (currentW - initialW).toFixed(1) } kg ganados
-          </span>
+          <span className="text-3xl font-extrabold text-slate-100">{currentW !== undefined ? `${currentW} kg` : 'Sin registro'}</span>
+          {currentW !== undefined && initialW !== undefined && (
+            <span className="text-xs text-emerald-400 font-medium flex items-center">{currentW - initialW >= 0 ? '+' : ''}{(currentW - initialW).toFixed(1)} kg</span>
+          )}
         </div>
 
         {/* Barra de Progreso */}
@@ -109,11 +112,11 @@ export const DashboardView: React.FC = () => {
             />
           </div>
           <div className="flex justify-between text-[11px] text-slate-500 font-medium">
-            <span>Inicio: {initialW} kg</span>
-            <span>Meta: {targetW} kg</span>
+            <span>Inicio: {initialW ? `${initialW} kg` : '—'}</span>
+            <span>Meta: {targetW ? `${targetW} kg` : '—'}</span>
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* Lista de Hábitos del Día */}
       <div className="p-5 rounded-2xl bg-[#0d1424] border border-slate-800 space-y-4">

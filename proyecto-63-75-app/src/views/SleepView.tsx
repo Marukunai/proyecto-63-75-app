@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
+import { getLocalDateString } from '../utils/dates';
 import { Moon, Star, Plus } from 'lucide-react';
 
 export const SleepView: React.FC = () => {
@@ -17,7 +18,7 @@ export const SleepView: React.FC = () => {
     if (!h || h <= 0) return;
 
     await db.sleepLogs.add({
-      date: new Date().toISOString().split('T')[0],
+      date: getLocalDateString(),
       hoursSlept: h,
       quality: quality as any,
       hadMelatonin,

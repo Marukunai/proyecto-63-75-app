@@ -9,7 +9,6 @@ import {
   Utensils,
   Moon,
   BookOpen,
-  MapPin,
   CheckCircle2,
   Circle,
 } from 'lucide-react';
@@ -36,10 +35,6 @@ const isSameDay = (date: Date, dateString: string) => {
   return getLocalDateString(date) === dateString;
 };
 
-const isJapanDate = (dateString: string) => {
-  return dateString >= '2026-10-15' && dateString <= '2026-10-31';
-};
-
 export const CalendarView: React.FC = () => {
   const today = new Date();
 
@@ -57,6 +52,7 @@ export const CalendarView: React.FC = () => {
   const sleepLogs = useLiveQuery(() => db.sleepLogs.toArray(), []);
   const journalEntries = useLiveQuery(() => db.journalEntries.toArray(), []);
   const dailyLogs = useLiveQuery(() => db.dailyLogs.toArray(), []);
+  const travelLogs = useLiveQuery(() => db.japanLogs.toArray(), []);
 
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
@@ -181,27 +177,6 @@ export const CalendarView: React.FC = () => {
         </button>
       </div>
 
-      {/* EVENTO JAPÓN */}
-      <div className="p-4 rounded-2xl bg-gradient-to-r from-red-950/40 via-slate-900 to-slate-900 border border-red-500/30">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">🇯🇵</span>
-
-          <div>
-            <h3 className="text-xs font-bold text-slate-100">
-              Viaje Hong Kong / Japón
-            </h3>
-
-            <p className="text-[11px] text-slate-400">
-              15 de octubre — 31 de octubre de 2026
-            </p>
-          </div>
-
-          <span className="ml-auto text-[10px] px-2.5 py-1 rounded-full bg-red-500/20 text-red-300 font-semibold border border-red-500/30">
-            Modo Japón
-          </span>
-        </div>
-      </div>
-
       {/* CALENDARIO */}
       <div className="bg-[#0d1424] border border-slate-800 rounded-2xl overflow-hidden">
 
@@ -263,7 +238,7 @@ export const CalendarView: React.FC = () => {
               getLocalDateString(today)
             );
 
-            const japan = isJapanDate(dateString);
+            const hasTravel = travelLogs?.some((log) => log.date === dateString) ?? false;
 
             return (
               <button
@@ -276,7 +251,6 @@ export const CalendarView: React.FC = () => {
                     ? 'bg-cyan-500/10 ring-1 ring-inset ring-cyan-500/50'
                     : 'hover:bg-slate-800/40'
                   }
-                  ${japan ? 'bg-red-950/10' : ''}
                 `}
               >
 
@@ -297,11 +271,7 @@ export const CalendarView: React.FC = () => {
                     {date.getDate()}
                   </span>
 
-                  {japan && (
-                    <span className="text-xs">
-                      🇯🇵
-                    </span>
-                  )}
+                  {hasTravel && <span className="text-[10px] text-cyan-400">Viaje</span>}
 
                 </div>
 
@@ -390,17 +360,7 @@ export const CalendarView: React.FC = () => {
           </h3>
         </div>
 
-        {isJapanDate(selectedDate) && (
-          <div className="p-3 rounded-xl bg-red-950/20 border border-red-500/20">
-            <div className="flex items-center gap-2">
-              <MapPin size={15} className="text-red-400" />
-
-              <span className="text-xs font-semibold text-red-300">
-                Modo Japón activo
-              </span>
-            </div>
-          </div>
-        )}
+        {travelLogs?.some((log) => log.date === selectedDate) && <p className="text-xs text-cyan-400">Hay un registro de viaje para este día.</p>}
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
 
