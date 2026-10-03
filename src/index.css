@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Los campos de formulario tienen un ancho intrínseco (~170px) y, dentro de flex/grid,
+   min-width:auto impide que encojan: eso es lo que los sacaba de la pantalla en móvil. */
+input, select, textarea {
+  min-width: 0;
+  max-width: 100%;
+}
+
 body {
   margin: 0;
   background-color: #090d16;

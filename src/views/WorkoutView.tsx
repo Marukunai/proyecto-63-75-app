@@ -117,7 +117,7 @@ export const WorkoutView: React.FC = () => {
           ))}
         </select>
 
-        <div className="flex gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:flex">
           <input
             type="number"
             min="1"
@@ -138,7 +138,7 @@ export const WorkoutView: React.FC = () => {
           />
           <button
             type="submit"
-            className="flex items-center gap-2 bg-cyan-500 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs hover:bg-cyan-400 transition-colors"
+            className="col-span-2 flex shrink-0 items-center justify-center gap-2 bg-cyan-500 text-slate-950 font-semibold px-4 py-2.5 rounded-xl text-xs hover:bg-cyan-400 transition-colors"
           >
             <Plus size={16} /> Serie
           </button>

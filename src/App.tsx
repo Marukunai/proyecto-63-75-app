@@ -108,6 +108,23 @@ export const App: React.FC = () => {
     setActiveTab('dashboard');
   };
 
+  const handleSignOut = async () => {
+    if (!window.confirm('¿Cerrar sesión? Tus datos ya sincronizados se mantienen en tu cuenta.')) return;
+    try {
+      const { getSupabaseClient } = await import('./services/supabaseClient');
+      const client = getSupabaseClient();
+      if (client) {
+        const { error } = await client.auth.signOut();
+        if (error) throw error;
+      }
+      window.localStorage.removeItem('SUPABASE_USER_ID');
+      await handleAccountChange(null);
+    } catch (error) {
+      console.error('No se pudo cerrar la sesión:', error);
+      alert('No se pudo cerrar la sesión. Inténtalo de nuevo.');
+    }
+  };
+
   if (!isDbReady) {
     return (
       <div className="min-h-screen w-full bg-[#090d16] flex flex-col items-center justify-center px-6 text-center text-slate-400 text-xs">
@@ -154,7 +171,7 @@ export const App: React.FC = () => {
 
   return (
     <div data-theme={appSettings?.theme ?? 'dark'} className="min-h-screen">
-      <Layout activeTab={activeTab} setActiveTab={setActiveTab} enabledModules={enabledModules}>
+      <Layout activeTab={activeTab} setActiveTab={setActiveTab} enabledModules={enabledModules} onSignOut={() => void handleSignOut()}>
         <Suspense fallback={<div className="py-10 text-center text-xs text-slate-500">Cargando pantalla…</div>}>
           {renderView()}
         </Suspense>

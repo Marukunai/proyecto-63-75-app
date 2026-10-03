@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   LayoutDashboard, Calendar, Dumbbell, Utensils, Scale, 
-  CheckSquare, Moon, Activity, Code2, BookOpen, Compass, Settings, MoreHorizontal, X 
+  CheckSquare, Moon, Activity, Code2, BookOpen, Compass, Settings, MoreHorizontal, X, LogOut
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -9,9 +9,10 @@ interface LayoutProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   enabledModules: string[];
+  onSignOut: () => void;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, enabledModules }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, enabledModules, onSignOut }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navItems = [
@@ -71,15 +72,28 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
             );
           })}
         </nav>
+
+        <button
+          onClick={onSignOut}
+          className="mt-3 flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-medium text-slate-400 border-t border-slate-800/80 pt-4 hover:text-red-400"
+        >
+          <LogOut size={16} />
+          Cerrar sesión
+        </button>
       </aside>
 
       {/* Contenido Principal */}
-      <main className="flex-1 flex flex-col h-full overflow-y-auto pb-24 md:pb-6">
+      <main className="flex-1 min-w-0 flex flex-col h-full overflow-y-auto overflow-x-hidden pb-24 md:pb-6">
         <header className="md:hidden flex items-center justify-between p-4 border-b border-slate-800 bg-[#0d1424]">
           <span className="font-bold text-cyan-400 text-sm">Mi espacio</span>
-          <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-            PWA Móvil
-          </span>
+          <button
+            onClick={onSignOut}
+            aria-label="Cerrar sesión"
+            className="flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700 active:text-red-400"
+          >
+            <LogOut size={13} />
+            Salir
+          </button>
         </header>
         <div className="p-4 md:p-8 max-w-5xl mx-auto w-full">
           {children}

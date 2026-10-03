@@ -83,24 +83,24 @@ export const NutritionView: React.FC = () => {
           />
         </div>
 
-        <div className="flex gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:flex">
           <input
             type="number"
-            placeholder="Proteína approx (g)"
+            placeholder="Proteína (g)"
             value={protein}
             onChange={(e) => setProtein(e.target.value)}
             className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:outline-none"
           />
           <input
             type="number"
-            placeholder="Calorías approx (kcal)"
+            placeholder="Calorías (kcal)"
             value={calories}
             onChange={(e) => setCalories(e.target.value)}
             className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:outline-none"
           />
           <button
             type="submit"
-            className="flex items-center gap-2 bg-cyan-500 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs hover:bg-cyan-400 transition-colors"
+            className="col-span-2 flex shrink-0 items-center justify-center gap-2 bg-cyan-500 text-slate-950 font-semibold px-4 py-2.5 rounded-xl text-xs hover:bg-cyan-400 transition-colors"
           >
             <Plus size={16} /> Añadir
           </button>
