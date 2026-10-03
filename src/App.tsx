@@ -30,19 +30,16 @@ export const App: React.FC = () => {
 
     const initialize = async () => {
       let signedInUser: User | null = null;
-      const hasSupabaseConfig = window.localStorage.getItem('SUPABASE_URL') && window.localStorage.getItem('SUPABASE_ANON_KEY');
-      if (hasSupabaseConfig) {
-        try {
-          const { getSupabaseClient } = await import('./services/supabaseClient');
-          const client = getSupabaseClient();
-          if (client) {
-            const { data, error } = await client.auth.getSession();
-            if (error) throw error;
-            signedInUser = data.session?.user ?? null;
-          }
-        } catch (error) {
-          console.error('No se pudo recuperar la sesión de Supabase:', error);
+      try {
+        const { getSupabaseClient } = await import('./services/supabaseClient');
+        const client = getSupabaseClient();
+        if (client) {
+          const { data, error } = await client.auth.getSession();
+          if (error) throw error;
+          signedInUser = data.session?.user ?? null;
         }
+      } catch (error) {
+        console.error('No se pudo recuperar la sesión de Supabase:', error);
       }
 
       await switchAccountDatabase(signedInUser?.id ?? null);

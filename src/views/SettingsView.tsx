@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { SupabaseClient, User } from '@supabase/supabase-js';
 import { exportDataToJSON, importDataFromJSON } from '../services/dataExport';
-import { getSupabaseClient, isServiceRoleKey, saveSupabaseConfig } from '../services/supabaseClient';
+import { getSupabaseClient } from '../services/supabaseClient';
 import { syncLocalData } from '../services/syncService';
 import { importLegacyDataIntoCurrentAccount } from '../db';
 import { db } from '../db';
@@ -14,15 +14,13 @@ interface SettingsViewProps {
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ standalone = false, onAccountChange }) => {
-  const [supabaseUrl, setSupabaseUrl] = useState(() => window.localStorage.getItem('SUPABASE_URL') || '');
-  const [supabaseKey, setSupabaseKey] = useState(() => window.localStorage.getItem('SUPABASE_ANON_KEY') || '');
-  const [client, setClient] = useState<SupabaseClient | null>(() => getSupabaseClient());
+  const [client] = useState<SupabaseClient | null>(() => getSupabaseClient());
   const [user, setUser] = useState<User | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [statusMsg, setStatusMsg] = useState(() => isServiceRoleKey(window.localStorage.getItem('SUPABASE_ANON_KEY') || '')
-    ? 'La clave guardada es de servidor y no se puede usar en el navegador. Sustitúyela por la anon public o publishable key.'
-    : '');
+  const [statusMsg, setStatusMsg] = useState(() => getSupabaseClient()
+    ? ''
+    : 'El propietario de la app debe configurar la URL y la clave pública de Supabase en las variables de entorno del despliegue.');
   const [isBusy, setIsBusy] = useState(false);
   const appSettings = useLiveQuery(() => user ? db.appSettings.get('app') : undefined, [user?.id]);
   const profile = useLiveQuery(() => user ? db.profile.toCollection().first() : undefined, [user?.id]);
@@ -85,32 +83,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ standalone = false, 
       setStatusMsg(error instanceof Error ? error.message : 'No se pudo sincronizar. Revisa la configuración y el SQL de Supabase.');
     } finally {
       setIsBusy(false);
-    }
-  };
-
-  const handleSaveConfig = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmedUrl = supabaseUrl.trim().replace(/\/$/, '');
-    const trimmedKey = supabaseKey.trim();
-    try {
-      const parsedUrl = new URL(trimmedUrl);
-      if (parsedUrl.protocol !== 'https:' && parsedUrl.hostname !== 'localhost') {
-        setStatusMsg('La URL del proyecto debe usar HTTPS.');
-        return;
-      }
-      if (!trimmedKey) {
-        setStatusMsg('Añade la anon public key o publishable key del proyecto.');
-        return;
-      }
-      if (isServiceRoleKey(trimmedKey)) {
-        setStatusMsg('Esa parece ser una service_role/secret key. No la pongas en la app; usa la anon public o publishable key.');
-        return;
-      }
-      saveSupabaseConfig(trimmedUrl, trimmedKey);
-      setClient(getSupabaseClient(trimmedUrl, trimmedKey));
-      setStatusMsg('Configuración guardada en este dispositivo. Ahora inicia sesión o crea tu cuenta.');
-    } catch {
-      setStatusMsg('La URL no parece válida. Copia la Project URL desde Supabase.');
     }
   };
 
@@ -195,37 +167,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ standalone = false, 
           <span>Sincronización segura con Supabase</span>
         </div>
         <p className="text-xs text-slate-400 leading-relaxed">
-          Usa la misma cuenta en cada dispositivo. La clave pública identifica el proyecto; tu sesión y las políticas RLS protegen tus datos.
+          La configuración del proyecto la administra quien publica la app. Usa tu cuenta personal para sincronizar tus datos; no necesitas claves del proyecto ni acceso al repositorio.
         </p>
-
-        <form onSubmit={handleSaveConfig} className="space-y-3">
-          <label className="block text-[11px] text-slate-400">
-            Project URL <span className="text-slate-500">(Supabase → Project Settings → API)</span>
-            <input
-              type="url"
-              required
-              placeholder="https://tu-proyecto.supabase.co"
-              value={supabaseUrl}
-              onChange={(e) => setSupabaseUrl(e.target.value)}
-              className="mt-1 w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500"
-            />
-          </label>
-          <label className="block text-[11px] text-slate-400">
-            Anon public key / publishable key
-            <input
-              type="password"
-              required
-              autoComplete="off"
-              placeholder="Pega aquí la clave pública del proyecto"
-              value={supabaseKey}
-              onChange={(e) => setSupabaseKey(e.target.value)}
-              className="mt-1 w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500"
-            />
-          </label>
-          <button type="submit" className="rounded-xl bg-cyan-500 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-cyan-400">
-            Guardar configuración
-          </button>
-        </form>
 
         {!user ? (
           <div className="border-t border-slate-800 pt-4 space-y-3">

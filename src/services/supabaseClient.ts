@@ -1,7 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 let supabaseInstance: SupabaseClient | null = null;
-let activeCredentials = '';
 
 export function isServiceRoleKey(key: string) {
   if (key.startsWith('sb_secret_')) return true;
@@ -17,32 +16,23 @@ export function isServiceRoleKey(key: string) {
   }
 }
 
-export function getSupabaseClient(url?: string, key?: string): SupabaseClient | null {
-  const savedUrl = url || window.localStorage.getItem('SUPABASE_URL') || '';
-  const savedKey = key || window.localStorage.getItem('SUPABASE_ANON_KEY') || '';
+export function getSupabaseClient(): SupabaseClient | null {
+  const savedUrl = import.meta.env.VITE_SUPABASE_URL?.trim() || '';
+  const savedKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim()
+    || import.meta.env.VITE_SUPABASE_ANON_KEY?.trim()
+    || '';
 
   if (!savedUrl || !savedKey || isServiceRoleKey(savedKey)) {
     return null;
   }
 
-  const credentials = `${savedUrl}|${savedKey}`;
-  if (!supabaseInstance || activeCredentials !== credentials) {
+  if (!supabaseInstance) {
     try {
       supabaseInstance = createClient(savedUrl, savedKey);
-      activeCredentials = credentials;
     } catch {
       return null;
     }
   }
 
   return supabaseInstance;
-}
-
-export function saveSupabaseConfig(url: string, key: string) {
-  if (isServiceRoleKey(key)) throw new Error('No se puede usar una service_role/secret key en la aplicación web.');
-  const nextClient = createClient(url, key);
-  window.localStorage.setItem('SUPABASE_URL', url);
-  window.localStorage.setItem('SUPABASE_ANON_KEY', key);
-  activeCredentials = `${url}|${key}`;
-  supabaseInstance = nextClient;
 }

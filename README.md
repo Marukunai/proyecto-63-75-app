@@ -120,10 +120,11 @@ Aplicación multiplataforma (PWA responsive) para hábitos, bienestar y crecimie
 ## 🔐 Configurar la sincronización con Supabase
 
 1. En Supabase, abre **SQL Editor** y ejecuta el contenido de [`supabase/schema.sql`](supabase/schema.sql). Este crea la tabla de sincronización y activa la política que limita las filas a su propietario.
-2. En **Authentication → URL Configuration**, establece la URL publicada de la app como **Site URL**. Revisa también las opciones de confirmación de correo según cómo quieras gestionar nuevas cuentas.
-3. En la aplicación, abre **Ajustes** (o la pantalla de acceso) y pega la **Project URL** y la **anon public key** (o publishable key) desde **Project Settings → API**. La clave pública puede estar en el navegador cuando RLS está activo; nunca uses `service_role` ni `sb_secret_` en la app.
-4. Crea una cuenta con correo y contraseña o inicia sesión. Supabase Auth verifica y almacena de forma segura las credenciales: la app no guarda contraseñas en sus tablas ni las hashea por su cuenta.
-5. Para pasar los datos personales que ya estaban en este dispositivo, inicia sesión con tu cuenta y usa **Transferir los datos antiguos de este dispositivo a esta cuenta**. Es una transferencia única de la antigua base local compartida. No la pulses en otro usuario que no deba recibir esos datos.
-6. Repite la configuración y entra con la misma cuenta en otro dispositivo. La app sincroniza al abrirse y periódicamente mientras está abierta; también puedes forzarla con **Sincronizar ahora**.
+2. En Netlify, abre el sitio y entra en **Project configuration → Environment variables**. Añade `VITE_SUPABASE_URL` con la Project URL y `VITE_SUPABASE_PUBLISHABLE_KEY` con la clave publishable de **Supabase → Project Settings → API Keys**. Si el proyecto solo tiene la clave antigua, usa `VITE_SUPABASE_ANON_KEY` en lugar de la variable publishable. Estas variables se incorporan al frontend durante el build, así que no pongas una `service_role` ni una `sb_secret_`.
+3. En **Authentication → URL Configuration**, establece la URL publicada de Netlify como **Site URL**. Revisa también las opciones de confirmación de correo según cómo quieras gestionar nuevas cuentas.
+4. En Netlify, lanza un nuevo deploy para que Vite compile con las variables. Los usuarios ya podrán crear una cuenta o iniciar sesión desde la app; no necesitan introducir claves, acceder al repo ni configurar Supabase.
+5. Supabase Auth verifica y almacena de forma segura las credenciales: la app no guarda contraseñas en sus tablas ni las hashea por su cuenta.
+6. Para pasar los datos personales que ya estaban en este dispositivo, inicia sesión con tu cuenta y usa **Transferir los datos antiguos de este dispositivo a esta cuenta**. Es una transferencia única de la antigua base local compartida. No la pulses en otro usuario que no deba recibir esos datos.
+7. En tus otros dispositivos, entra con la misma cuenta. La app sincroniza al abrirse y periódicamente mientras está abierta; también puedes forzarla con **Sincronizar ahora**.
 
 Las bases locales se separan por usuario en cada dispositivo. La primera sincronización une los registros locales de esa cuenta con los de la nube; si dos dispositivos cambian el mismo registro sin sincronizar, se conserva la versión más reciente.
